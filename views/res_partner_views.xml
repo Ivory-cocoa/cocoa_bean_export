@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="potting_consignee_view_form_bean_export" model="ir.ui.view">
+        <field name="name">res.partner.consignee.form.bean.export</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="potting_management.potting_consignee_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='potting_lot_prefix_cocoa_mass']" position="before">
+                <field name="potting_lot_prefix_cocoa_beans" placeholder="Ex: F"/>
+            </xpath>
+            <xpath expr="//field[@name='potting_lot_next_seq_cocoa_mass']" position="before">
+                <field name="potting_lot_next_seq_cocoa_beans"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

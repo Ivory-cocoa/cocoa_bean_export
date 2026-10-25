@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Grille des grades, vue Export : la campagne fèves réduite à ses
+         dates et à ses seuils de grade (le formulaire complet du module
+         fèves sert aux achats : prix, primes, transport…). -->
+    <record id="cocoa_campaign_view_tree_bean_export" model="ir.ui.view">
+        <field name="name">cocoa.campaign.tree.bean.export</field>
+        <field name="model">cocoa.campaign</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="campaign_type"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="cocoa_campaign_view_form_bean_export" model="ir.ui.view">
+        <field name="name">cocoa.campaign.form.bean.export</field>
+        <field name="model">cocoa.campaign</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <form string="Grille des grades">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" placeholder="Ex. 2026-2027"/>
+                            <field name="campaign_type"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="purchase_price_kg" invisible="1"/>
+                        </group>
+                    </group>
+                    <div class="text-muted mb-2">
+                        Grade 1 si la mesure est ≤ au seuil Grade 1, Grade 2 si ≤ au seuil
+                        Grade 2, sous-grade au-delà ; 0 = critère sans effet sur le grade.
+                        Au-delà du seuil de refoulement, le lot d'usinage est non conforme.
+                    </div>
+                    <field name="quality_criterion_ids">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="criterion"/>
+                            <field name="max_g1"/>
+                            <field name="max_g2"/>
+                            <field name="max_accept"/>
+                        </tree>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_bean_export_grade_grid" model="ir.actions.act_window">
+        <field name="name">Grilles des grades</field>
+        <field name="res_model">cocoa.campaign</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'default_purchase_price_kg': 0.0}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('cocoa_campaign_view_tree_bean_export')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('cocoa_campaign_view_form_bean_export')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Créer la grille des grades d'une campagne</p>
+            <p>Seuils Grade 1 / Grade 2 / refoulement par critère, appliqués aux lots
+               d'usinage pesés pendant la campagne.</p>
+        </field>
+    </record>
+</odoo>

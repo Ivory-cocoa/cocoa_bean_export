@@ -1,0 +1,7 @@
+# Artefacts Python — ne jamais commiter
+__pycache__/
+*.pyc
+*.pyo
+
+# Fichiers système
+.DS_Store

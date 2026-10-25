@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Lots d'usinage : en tête du menu Production du socle -->
+    <menuitem id="menu_cocoa_bean_export_batch"
+              name="Lots d'usinage"
+              parent="potting_management.menu_potting_production"
+              action="action_cocoa_bean_export_batch"
+              sequence="5"
+              groups="potting_management.group_potting_shipping,potting_management.group_potting_production,potting_management.group_potting_container_manager"/>
+
+    <!-- Référentiels qualité du module fèves (normes, grilles de grades),
+         modifiables par le Manager Export -->
+    <menuitem id="menu_bean_export_quality_config"
+              name="Qualité des fèves"
+              parent="potting_management.menu_potting_config"
+              sequence="45"
+              groups="potting_management.group_potting_manager"/>
+    <menuitem id="menu_bean_export_quality_standard"
+              name="Normes d'acceptation"
+              parent="menu_bean_export_quality_config"
+              action="cocoa_bean_management.action_cocoa_quality_standard"
+              sequence="10"
+              groups="potting_management.group_potting_manager"/>
+    <menuitem id="menu_bean_export_cocoa_campaign"
+              name="Grilles des grades"
+              parent="menu_bean_export_quality_config"
+              action="action_bean_export_grade_grid"
+              sequence="20"
+              groups="potting_management.group_potting_manager"/>
+</odoo>

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="cocoa_bean_export_batch_view_tree" model="ir.ui.view">
+        <field name="name">cocoa.bean.export.batch.tree</field>
+        <field name="model">cocoa.bean.export.batch</field>
+        <field name="arch" type="xml">
+            <tree decoration-muted="state == 'cancelled'"
+                  decoration-info="state == 'draft'"
+                  decoration-success="allocation_status == 'full'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="site_id"/>
+                <field name="site_lot_ref"/>
+                <field name="weighing_ticket" optional="show"/>
+                <field name="certification_id" optional="show"/>
+                <field name="quality_grade" optional="show"/>
+                <field name="quality_status" widget="badge" optional="show"
+                       decoration-success="quality_status == 'conform'"
+                       decoration-danger="quality_status == 'non_conform'"/>
+                <field name="bag_count" sum="Sacs"/>
+                <field name="net_weight_kg" sum="Net (kg)"/>
+                <field name="remaining_bags" sum="Sacs disponibles" optional="show"/>
+                <field name="remaining_net_kg" sum="Net disponible (kg)"/>
+                <field name="allocation_status" widget="badge"
+                       decoration-success="allocation_status == 'full'"
+                       decoration-warning="allocation_status == 'partial'"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="cocoa_bean_export_batch_view_form" model="ir.ui.view">
+        <field name="name">cocoa.bean.export.batch.form</field>
+        <field name="model">cocoa.bean.export.batch</field>
+        <field name="arch" type="xml">
+            <form string="Lot d'usinage">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirmer"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Remettre en brouillon"
+                            invisible="state == 'draft' or production_line_ids"/>
+                    <button name="action_cancel" type="object" string="Annuler"
+                            invisible="state == 'cancelled' or production_line_ids"
+                            confirm="Annuler ce lot d'usinage ?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_lots" type="object" class="oe_stat_button"
+                                icon="fa-cubes" invisible="not production_line_ids">
+                            <span class="o_stat_text">Lots export</span>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Entièrement affecté" bg_color="text-bg-success"
+                            invisible="allocation_status != 'full'"/>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <field name="is_bulk" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <group>
+                        <group string="Bulletin de pesée du site">
+                            <field name="site_id" readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="site_lot_ref" readonly="state != 'draft'"/>
+                            <field name="weighing_ticket" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="campaign_id" options="{'no_create': True}"/>
+                            <field name="company_id" groups="base.group_multi_company"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Poids">
+                            <field name="bag_count" invisible="is_bulk and not bag_count"
+                                   readonly="state != 'draft'"/>
+                            <field name="gross_weight_kg" readonly="state != 'draft'"/>
+                            <field name="tare_weight_kg" readonly="state != 'draft'"/>
+                            <field name="net_weight_kg" class="fw-bold"/>
+                            <field name="net_per_bag_kg" invisible="not bag_count"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Qualité">
+                            <field name="grade" string="Grade déclaré"/>
+                            <field name="quality_certificate_ref"/>
+                            <field name="quality_standard_id"/>
+                            <field name="quality_grade"/>
+                            <field name="quality_status" widget="badge"
+                                   decoration-success="quality_status == 'conform'"
+                                   decoration-danger="quality_status == 'non_conform'"/>
+                        </group>
+                        <group string="Certification et affectation">
+                            <field name="certification_id" readonly="state != 'draft'"
+                                   placeholder="Non certifié" options="{'no_create': True}"/>
+                            <field name="allocation_status" widget="badge"/>
+                            <field name="allocated_bags" invisible="is_bulk"/>
+                            <field name="remaining_bags" invisible="is_bulk"/>
+                            <field name="allocated_net_kg"/>
+                            <field name="remaining_net_kg" class="fw-bold"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Affectations aux lots export" name="allocations">
+                            <field name="production_line_ids" readonly="1">
+                                <tree>
+                                    <field name="date"/>
+                                    <field name="lot_id"/>
+                                    <field name="transit_order_id"/>
+                                    <field name="units_produced" string="Sacs / kg"/>
+                                    <field name="bean_net_weight_kg" sum="Net (kg)"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Mesures qualité" name="quality">
+                            <group>
+                                <group>
+                                    <field name="moisture_pct"/>
+                                    <field name="bean_count"/>
+                                    <field name="mouldy_pct"/>
+                                    <field name="slaty_pct"/>
+                                    <field name="insect_damaged_pct"/>
+                                </group>
+                                <group>
+                                    <field name="foreign_matter_pct"/>
+                                    <field name="broken_pct"/>
+                                    <field name="waste_pct"/>
+                                    <field name="germinated_pct"/>
+                                    <field name="flat_pct"/>
+                                </group>
+                            </group>
+                            <field name="quality_messages" readonly="1"/>
+                            <button name="action_evaluate_quality" type="object"
+                                    string="Réévaluer" class="btn-link"
+                                    help="Après une modification de la norme ou de la grille des grades."/>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note" placeholder="Observations (pesée, qualité, transport…)"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="cocoa_bean_export_batch_view_search" model="ir.ui.view">
+        <field name="name">cocoa.bean.export.batch.search</field>
+        <field name="model">cocoa.bean.export.batch</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="site_lot_ref"/>
+                <field name="weighing_ticket"/>
+                <field name="site_id"/>
+                <field name="certification_id"/>
+                <filter name="available" string="Disponibles"
+                        domain="[('state', '=', 'confirmed'), ('allocation_status', '!=', 'full')]"/>
+                <filter name="draft" string="Brouillons" domain="[('state', '=', 'draft')]"/>
+                <filter name="full" string="Entièrement affectés"
+                        domain="[('allocation_status', '=', 'full')]"/>
+                <separator/>
+                <filter name="certified" string="Certifiés" domain="[('certification_id', '!=', False)]"/>
+                <filter name="conventional" string="Conventionnels" domain="[('certification_id', '=', False)]"/>
+                <separator/>
+                <filter name="non_conform" string="Non conformes"
+                        domain="[('quality_status', '=', 'non_conform')]"/>
+                <filter name="not_evaluated" string="Qualité non évaluée"
+                        domain="[('quality_status', '=', 'not_evaluated')]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter name="group_site" string="Site" context="{'group_by': 'site_id'}"/>
+                    <filter name="group_certification" string="Certification"
+                            context="{'group_by': 'certification_id'}"/>
+                    <filter name="group_status" string="Affectation"
+                            context="{'group_by': 'allocation_status'}"/>
+                    <filter name="group_month" string="Mois" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_cocoa_bean_export_batch" model="ir.actions.act_window">
+        <field name="name">Lots d'usinage</field>
+        <field name="res_model">cocoa.bean.export.batch</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_available': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Saisir un lot d'usinage</p>
+            <p>Un lot d'usinage reprend le bulletin de pesée de sortie du site :
+               n° de lot du site, sacs, poids brut, tare et net. Les lots export
+               de fèves en sont constitués.</p>
+        </field>
+    </record>
+</odoo>

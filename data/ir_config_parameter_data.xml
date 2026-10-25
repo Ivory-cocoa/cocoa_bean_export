@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Fèves : 1 t de fèves = 1 t de fèves (besoin en fèves, Mass Balance) -->
+        <record id="param_bean_coefficient_cocoa_beans" model="ir.config_parameter">
+            <field name="key">potting_management.bean_coefficient_cocoa_beans</field>
+            <field name="value">1.0</field>
+        </record>
+        <record id="param_mb_factor_cocoa_beans" model="ir.config_parameter">
+            <field name="key">potting_management.mb_bean_factor_cocoa_beans</field>
+            <field name="value">1.0</field>
+        </record>
+    </data>
+
+    <!-- Menus d'usine masqués en mode « fèves uniquement » (rejoué à chaque
+         mise à jour : suit le réglage courant) -->
+    <function model="res.config.settings" name="_bean_export_sync_menus"/>
+</odoo>

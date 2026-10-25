@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="potting_lot_view_form_bean_export" model="ir.ui.view">
+        <field name="name">potting.lot.form.bean.export</field>
+        <field name="model">potting.lot</field>
+        <field name="inherit_id" ref="potting_management.potting_lot_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="is_bean_lot" invisible="1"/>
+                <button name="action_open_bean_constitution" type="object"
+                        string="Constituer le lot" class="btn-primary"
+                        invisible="not is_bean_lot or state not in ('draft', 'in_production', 'ready') or is_split"
+                        groups="potting_management.group_potting_shipping,potting_management.group_potting_container_manager,potting_management.group_potting_production"/>
+            </xpath>
+            <!-- Fèves : la production se constitue depuis les lots d'usinage -->
+            <xpath expr="//button[@name='action_start_production']" position="attributes">
+                <attribute name="invisible">state != 'draft' or is_full or is_split or is_bean_lot</attribute>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_bean_batches" type="object"
+                        class="oe_stat_button" icon="fa-leaf"
+                        invisible="not is_bean_lot or not bean_batch_count">
+                    <field name="bean_batch_count" widget="statinfo" string="Lots d'usinage"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

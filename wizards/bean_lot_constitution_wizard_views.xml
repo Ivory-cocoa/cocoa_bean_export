@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cocoa_bean_lot_constitution_wizard_view_form" model="ir.ui.view">
+        <field name="name">cocoa.bean.lot.constitution.wizard.form</field>
+        <field name="model">cocoa.bean.lot.constitution.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Constituer le lot">
+                <field name="company_id" invisible="1"/>
+                <field name="certification_id" invisible="1"/>
+                <field name="is_bulk" invisible="1"/>
+                <group>
+                    <group>
+                        <field name="lot_id"/>
+                        <field name="date"/>
+                    </group>
+                    <group>
+                        <field name="target_tonnage"/>
+                        <field name="current_tonnage"/>
+                        <field name="resulting_tonnage" class="fw-bold"/>
+                    </group>
+                </group>
+                <div class="alert alert-info" role="status">
+                    Seuls les lots d'usinage confirmés, de la même certification que
+                    le lot (<field name="certification_id" readonly="1" nolabel="1"
+                    class="d-inline" placeholder="non certifié"/>), sont proposés. Le
+                    poids net affecté est le poids pesé au site, au prorata des sacs.
+                </div>
+                <field name="line_ids">
+                    <tree editable="bottom">
+                        <field name="batch_id" options="{'no_create': True}"/>
+                        <field name="remaining_bags" string="Sacs disponibles"
+                               column_invisible="parent.is_bulk"/>
+                        <field name="remaining_net_kg" string="Net disponible (kg)"/>
+                        <field name="quantity"/>
+                        <field name="net_weight_kg" sum="Net ajouté (kg)"/>
+                    </tree>
+                </field>
+                <field name="quality_mode" invisible="1"/>
+                <div class="alert alert-warning" role="alert" invisible="not quality_issues">
+                    <strong>Constats qualité</strong>
+                    <field name="quality_issues" readonly="1" nolabel="1"/>
+                </div>
+                <group>
+                    <field name="complete_lot"/>
+                    <field name="quality_override"
+                           invisible="not quality_issues or quality_mode != 'block'"
+                           groups="potting_management.group_potting_manager"/>
+                    <field name="quality_override_reason"
+                           invisible="not quality_override"
+                           required="quality_override"
+                           groups="potting_management.group_potting_manager"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Affecter"
+                            class="btn-primary"/>
+                    <button string="Annuler" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

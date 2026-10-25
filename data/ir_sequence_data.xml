@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Lots d'usinage saisis depuis les bulletins de pesée du site -->
+        <record id="seq_bean_export_batch" model="ir.sequence">
+            <field name="name">Lot d'usinage (fèves export)</field>
+            <field name="code">cocoa.bean.export.batch</field>
+            <field name="prefix">LU/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Lots export de fèves (client principal) : F10001, F10002…
+             Même logique que potting.lot.cocoa_mass & co. du socle. -->
+        <record id="seq_potting_lot_cocoa_beans" model="ir.sequence">
+            <field name="name">Lots Fèves de cacao</field>
+            <field name="code">potting.lot.cocoa_beans</field>
+            <field name="prefix"></field>
+            <field name="padding">5</field>
+            <field name="number_next">10001</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

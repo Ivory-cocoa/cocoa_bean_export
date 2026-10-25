@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_bean_export" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.bean.export</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="potting_management.res_config_settings_view_form_potting"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='potting_mass_balance_config']" position="before">
+                <block title="🌰 Export des fèves de cacao" name="bean_export_config">
+                    <setting id="bean_export_scope" string="Produits exportés"
+                             help="Décoché : la société n'exporte que des fèves ; les semi-finis disparaissent des listes de choix, des tableaux de bord et des menus d'usine.">
+                        <field name="bean_export_with_semi_finished"/>
+                    </setting>
+                    <setting id="bean_export_packaging" string="Conditionnement"
+                             help="Sacs de jute ou vrac. Le tonnage d'un lot est toujours le poids net pesé au site.">
+                        <field name="bean_export_packaging" widget="radio"/>
+                        <div class="row mt-2" invisible="bean_export_packaging == 'bulk'">
+                            <label for="bean_export_bag_weight_kg" class="col-lg-5 o_light_label"/>
+                            <field name="bean_export_bag_weight_kg" class="col-lg-3"/>
+                        </div>
+                        <div class="row mt-1" invisible="bean_export_packaging == 'bulk'">
+                            <label for="bean_export_bag_tare_kg" class="col-lg-5 o_light_label"/>
+                            <field name="bean_export_bag_tare_kg" class="col-lg-3"/>
+                        </div>
+                    </setting>
+                    <setting id="bean_export_quality" string="Contrôle qualité"
+                             help="Les mesures d'un lot d'usinage sont évaluées avec la norme d'acceptation de sa certification et la grille des grades de la campagne fèves (Configuration ▸ Qualité des fèves).">
+                        <field name="bean_export_quality_control" widget="radio"/>
+                    </setting>
+                    <setting id="bean_export_lots" string="Lots export"
+                             help="Découpage des OT de fèves en lots et préfixe des références de lot.">
+                        <div class="row">
+                            <label for="bean_export_max_lot_tonnage" class="col-lg-5 o_light_label"/>
+                            <field name="bean_export_max_lot_tonnage" class="col-lg-3"/>
+                        </div>
+                        <div class="row mt-1">
+                            <label for="bean_export_lot_prefix" class="col-lg-5 o_light_label"/>
+                            <field name="bean_export_lot_prefix" class="col-lg-3"/>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>
