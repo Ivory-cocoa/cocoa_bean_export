@@ -132,10 +132,16 @@ class CocoaBeanExportBatchEudr(models.Model):
         for batch in self.filtered('eudr_geojson'):
             parse_geojson(base64.b64decode(batch.eudr_geojson))
 
-    @api.depends('source_bean_lot_ids.eudr_state', 'eudr_geojson', 'eudr_verified')
+    def _eudr_source_lots(self):
+        """Lots de fèves d'origine suivis dans Odoo (étendu par l'usinage)."""
+        self.ensure_one()
+        return self.source_bean_lot_ids
+
+    @api.depends('source_bean_lot_ids.eudr_state', 'eudr_geojson', 'eudr_verified',
+                 'processing_id.line_ids.lot_id.eudr_state')
     def _compute_eudr(self):
         for batch in self:
-            beans = batch.source_bean_lot_ids
+            beans = batch._eudr_source_lots()
             if beans:
                 batch.eudr_state = _aggregate(set(beans.mapped('eudr_state')))
                 batch.eudr_reason = "\n".join(
@@ -184,7 +190,7 @@ class CocoaBeanExportBatchEudr(models.Model):
     def _eudr_supplied_features(self):
         """Entités GeoJSON fournies (lots d'usinage sans lots d'origine)."""
         features = []
-        for batch in self.filtered(lambda b: b.eudr_geojson and not b.source_bean_lot_ids):
+        for batch in self.filtered(lambda b: b.eudr_geojson and not b._eudr_source_lots()):
             features += parse_geojson(base64.b64decode(batch.eudr_geojson))
         return features
 
@@ -193,13 +199,16 @@ class PottingLotBeanEudr(models.Model):
     _inherit = 'potting.lot'
 
     @api.depends('bean_lot_ids', 'bean_consumption_ids.bean_lot_id',
-                 'production_line_ids.bean_batch_id.eudr_state')
+                 'production_line_ids.bean_batch_id.eudr_state',
+                 'production_line_ids.bean_batch_id.source_bean_lot_ids',
+                 'production_line_ids.bean_batch_id.processing_id')
     def _compute_eudr(self):
         beans_lots = self.filtered(lambda l: l.product_type == 'cocoa_beans')
         super(PottingLotBeanEudr, self - beans_lots)._compute_eudr()
         for lot in beans_lots:
             batches = lot.production_line_ids.mapped('bean_batch_id')
-            lot.eudr_bean_lot_ids = batches.mapped('source_bean_lot_ids')
+            lot.eudr_bean_lot_ids = self.env['cocoa.bean.lot'].union(
+                *[batch._eudr_source_lots() for batch in batches])
             if not batches:
                 lot.eudr_state = 'not_traced'
                 lot.eudr_reason = _("Lot non constitué : aucun lot d'usinage.")

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Usinage du module fèves : sa sortie peut être des lots d'usinage
+         expédiés au port (et non des camions RUT reçus à l'usine). -->
+    <record id="cocoa_export_processing_view_form_bean_export" model="ir.ui.view">
+        <field name="name">cocoa.export.processing.form.bean.export</field>
+        <field name="model">cocoa.export.processing</field>
+        <field name="inherit_id" ref="cocoa_bean_management.cocoa_export_processing_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_new_reception']" position="after">
+                <button name="action_new_export_batch" type="object"
+                        string="Lot d'usinage expédié au port" class="btn-primary"
+                        invisible="state != 'processing'"
+                        groups="potting_management.group_potting_shipping,potting_management.group_potting_production,potting_management.group_potting_container_manager"/>
+            </xpath>
+            <xpath expr="//page[@name='receptions']" position="before">
+                <page string="Lots d'usinage (export)" name="export_batches">
+                    <field name="export_batch_ids" readonly="1">
+                        <tree>
+                            <field name="name"/>
+                            <field name="date"/>
+                            <field name="weighing_ticket"/>
+                            <field name="bag_count" sum="Sacs"/>
+                            <field name="net_weight_kg" sum="Net (kg)"/>
+                            <field name="allocation_status" widget="badge"/>
+                            <field name="state" widget="badge"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -68,7 +68,10 @@
                     <field name="company_id" invisible="1"/>
                     <group>
                         <group string="Bulletin de pesée du site">
-                            <field name="site_id" readonly="state != 'draft'"
+                            <field name="processing_id" readonly="state != 'draft'"
+                                   options="{'no_create': True}"
+                                   placeholder="Usinage suivi dans Odoo (facultatif)"/>
+                            <field name="site_id" readonly="state != 'draft' or processing_id"
                                    options="{'no_create': True}"/>
                             <field name="site_lot_ref" readonly="state != 'draft'"/>
                             <field name="weighing_ticket" readonly="state != 'draft'"/>

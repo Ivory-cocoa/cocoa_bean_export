@@ -34,6 +34,8 @@
             <li>Certification (empty for conventional beans) and quality measurements (<i>Quality measurements</i> tab).</li>
             <li><span class="btn-ui">Confirm</span>: only a confirmed batch can be allocated.</li>
         </ol>
+        <h3>When processing is tracked in Odoo</h3>
+        <p>If cooperative purchases (waybills, BA slips) and site processing are tracked in the <b>Cocoa beans</b> module, select the <b>processing</b> on the batch, or click <span class="btn-ui">Lot d’usinage expédié au port</span> from the processing. Site, lot number and certification are carried over; the batch net weight becomes the <b>processing output</b>, which drives the processing loss (raw beans processed − beans out), and its BA lots prevail for EUDR. The processing closes without RUT trucks; once closed, its batches are frozen.</p>
         <p>A weighing slip cannot be entered twice for the same site. Once allocated, the batch's weights, site and certification are locked.</p>
         <h3>Importing a workbook</h3>
         <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_batch_import')"/>: an .xlsx file whose columns are recognised by their header, in any order. Required: site lot number, site, date, gross weight. French numbers ("26 400,5") and dd/mm/yyyy dates are accepted.</p>
@@ -81,7 +83,7 @@
     <template id="guide_beans_eudr_en" name="Bean guide - EUDR (en)">
         <p><b>EUDR</b> tab of the processing batch. Two ways to trace the beans:</p>
         <ul>
-            <li><b>Source bean lots</b>, when the upstream chain (purchases, plots) is tracked in Odoo: their eligibility prevails.</li>
+            <li><b>Source bean lots</b>, when the upstream chain (purchases, plots) is tracked in Odoo — entered on the batch or taken from its <b>processing</b> (BA lots): their eligibility prevails.</li>
             <li><b>Supplied geolocation</b>: the GeoJSON file provided by the site or cooperatives. Odoo checks it on upload (structure, coordinates in Côte d'Ivoire in [longitude, latitude] order, closed polygons). The batch stays <span class="state">To complete / check</span> until a <t t-out="g.group('potting_management.group_potting_manager')"/> clicks <span class="btn-ui">Mark as verified</span>. A new file cancels the verification.</li>
         </ul>
         <p>The export lot takes the state of its batches and the B/L that of its lots. On an eligible B/L, <span class="btn-ui">Générer le dossier EUDR</span> produces the GeoJSON (source plots and supplied plots) and the summary for the importer, who files the due diligence statement (DDS). Its reference and verification numbers are then entered on the B/L, which freezes the dossier.</p>
@@ -120,6 +122,7 @@
             </tbody>
         </table>
         <h3>Before go-live</h3>
+        <p><t t-out="g.menu('cocoa_bean_export.menu_bean_export_readiness')"/> checks the configuration and lists what blocks or remains to be done, with a button to each screen.</p>
         <ol>
             <li>Default currency and exchange rates (a foreign-currency invoice without a rate is refused).</li>
             <li>Company identity and bank accounts.</li>

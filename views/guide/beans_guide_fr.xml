@@ -36,6 +36,8 @@
             <li>Certification (vide pour des fèves conventionnelles) et mesures qualité (onglet <i>Mesures qualité</i>).</li>
             <li>Bouton <span class="btn-ui">Confirmer</span> : seul un lot confirmé peut être affecté.</li>
         </ol>
+        <h3>Quand l’usinage est suivi dans Odoo</h3>
+        <p>Si les achats aux coopératives (connaissements, bordereaux BA) et l’usinage du site sont suivis dans le module <b>Fèves de cacao</b>, choisissez l’<b>usinage</b> sur le lot d’usinage, ou cliquez <span class="btn-ui">Lot d’usinage expédié au port</span> depuis l’usinage. Site, n° de lot et certification sont repris ; le poids net du lot d’usinage devient la <b>sortie de l’usinage</b>, qui calcule la freinte (brousse usiné − cacao sorti), et ses lots BA font foi pour l’EUDR. L’usinage se clôture sans camion RUT ; une fois clôturé, ses lots d’usinage sont figés.</p>
         <p>Un même bulletin de pesée ne peut pas être saisi deux fois pour un site. Une fois le lot affecté, sa pesée, son site et sa certification sont verrouillés.</p>
         <h3>Importer un classeur</h3>
         <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_batch_import')"/> : un fichier .xlsx dont les colonnes sont reconnues par leur en-tête, dans n’importe quel ordre (« N° lot site » ou « Lots », « Bulletin », « Brut »…). Sont obligatoires : n° de lot du site, site, date, poids brut. Les nombres « 26 400,5 » et les dates jj/mm/aaaa sont acceptés.</p>
@@ -83,7 +85,7 @@
     <template id="guide_beans_eudr_fr" name="Guide fèves - EUDR (fr)">
         <p>Onglet <b>EUDR</b> du lot d’usinage. Deux façons de tracer les fèves :</p>
         <ul>
-            <li><b>Lots de fèves d’origine</b>, quand l’amont (achats, parcelles) est suivi dans Odoo : leur éligibilité fait foi.</li>
+            <li><b>Lots de fèves d’origine</b>, quand l’amont (achats, parcelles) est suivi dans Odoo — saisis sur le lot d’usinage ou repris de son <b>usinage</b> (lots BA) : leur éligibilité fait foi.</li>
             <li><b>Géolocalisation fournie</b> : le fichier GeoJSON remis par le site ou les coopératives. Odoo le contrôle à l’import (structure, coordonnées en Côte d’Ivoire dans l’ordre [longitude, latitude], polygones fermés). Le lot reste <span class="state">À compléter / vérifier</span> jusqu’à ce qu’un <t t-out="g.group('potting_management.group_potting_manager')"/> clique <span class="btn-ui">Marquer comme vérifiée</span>. Un nouveau fichier annule la vérification.</li>
         </ul>
         <p>Le lot export prend l’état de ses lots d’usinage et le BL celui de ses lots. Sur un BL éligible, <span class="btn-ui">Générer le dossier EUDR</span> produit le GeoJSON (parcelles d’origine et parcelles fournies) et le récapitulatif à transmettre à l’importateur, qui dépose la déclaration (DDS). Ses n° de référence et de vérification se saisissent ensuite sur le BL, ce qui fige le dossier.</p>
@@ -122,6 +124,7 @@
             </tbody>
         </table>
         <h3>Avant la mise en service</h3>
+        <p><t t-out="g.menu('cocoa_bean_export.menu_bean_export_readiness')"/> contrôle la configuration et liste ce qui bloque ou reste à compléter, avec un bouton vers chaque écran.</p>
         <ol>
             <li>Devise par défaut et taux de change (une facture en devise sans taux est refusée).</li>
             <li>Identité de la société et comptes bancaires.</li>

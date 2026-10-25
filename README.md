@@ -43,6 +43,21 @@ Qualité des fèves :
 - **Grilles des grades** (par campagne fèves) → Grade 1 / Grade 2 /
   sous-grade, comparé au grade de la CV de l'OT.
 
+## Amont suivi dans Odoo (usinage)
+
+Quand les achats aux coopératives et l'usinage du site sont suivis dans le
+module fèves (`cocoa.export.processing`), le lot d'usinage se rattache à son
+usinage (bouton « Lot d'usinage expédié au port ») : son net est la sortie
+de l'usinage (freinte, alertes, retenues du module fèves), ses lots BA font
+foi pour l'EUDR, l'usinage se clôture sans camion RUT et sa sortie est figée
+à la clôture.
+
+## Mise en service
+
+Configuration ▸ Mise en service (fèves) : 14 contrôles de la configuration
+réelle (bloquant / à compléter / conforme), chacun avec un bouton vers
+l'écran de correction.
+
 ## Documents d'export (BL)
 
 Chaque BL de fèves reçoit une ligne par type de document actif
@@ -104,6 +119,6 @@ réglage).
 
 ## Tests
 
-`--test-tags /cocoa_bean_export` (40 tests). Les tests de `potting_management` se
+`--test-tags /cocoa_bean_export` (47 tests). Les tests de `potting_management` se
 lancent sur une base **sans** ce module (le mode fèves uniquement y refuse
 les semi-finis).
