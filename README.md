@@ -25,6 +25,8 @@ ceux du socle. Ce module n'ajoute que ce qui est propre aux fèves.
 |---|---|
 | Exporter aussi des semi-finis | non (fèves uniquement : semi-finis masqués et refusés, menus d'usine cachés) |
 | Conditionnement | sacs de jute (poids nominal 65 kg, tare 1 kg) ou vrac (unité = kg, tare 0) |
+| Tonnage maximal d'un OT | 1 000 T (refus au-delà ; jamais sous un OT de fèves en cours) |
+| Tonnage proposé par OT | 100 T (génération depuis un contrat, ≤ maximum) |
 | Tonnage maximal d'un lot | 25 T |
 | Préfixe des lots | F |
 | Contrôle qualité | avertissement (désactivé / avertissement / blocage avec dérogation motivée d'un Manager) |
@@ -119,6 +121,6 @@ réglage).
 
 ## Tests
 
-`--test-tags /cocoa_bean_export` (47 tests). Les tests de `potting_management` se
+`--test-tags /cocoa_bean_export` (50 tests). Les tests de `potting_management` se
 lancent sur une base **sans** ce module (le mode fèves uniquement y refuse
 les semi-finis).

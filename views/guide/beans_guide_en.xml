@@ -115,6 +115,8 @@
                 <tr><td>Trade name, acronym, NCC, REX code, RA ID</td><td>Empty: company name, initials, tax number of the company form.</td></tr>
                 <tr><td>Also export semi-finished products</td><td>No: beans only.</td></tr>
                 <tr><td>Packaging</td><td>65 kg jute bags, 1 kg tare; or bulk (in kg, no per-unit tare).</td></tr>
+                <tr><td>Maximum TO tonnage</td><td>1,000 t: any TO above is refused. Cannot go below an open bean TO.</td></tr>
+                <tr><td>Proposed tonnage per TO</td><td>100 t, when generating TOs from a contract (never above the maximum).</td></tr>
                 <tr><td>Maximum lot tonnage</td><td>25 t.</td></tr>
                 <tr><td>Quality check</td><td>Warning.</td></tr>
                 <tr><td>Arrival weight franchise</td><td>0.5%.</td></tr>

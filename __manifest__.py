@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "Exportation des fèves de cacao",
-    'version': '17.0.1.3.0',
+    'version': '17.0.1.4.0',
     'category': 'Inventory/Logistics',
     'summary': "Export de fèves de cacao brutes sur le socle Gestion des Exportations",
     'description': """

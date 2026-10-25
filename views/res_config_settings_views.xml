@@ -34,6 +34,17 @@
                             <field name="bean_export_weight_franchise_pct" class="col-lg-3"/>
                         </div>
                     </setting>
+                    <setting id="bean_export_ots" string="Ordres de transit"
+                             help="Plafond d'un OT de fèves et tonnage proposé par OT à la génération depuis un contrat.">
+                        <div class="row">
+                            <label for="bean_export_max_ot_tonnage" class="col-lg-5 o_light_label"/>
+                            <field name="bean_export_max_ot_tonnage" class="col-lg-3"/>
+                        </div>
+                        <div class="row mt-1">
+                            <label for="bean_export_default_ot_tonnage" class="col-lg-5 o_light_label"/>
+                            <field name="bean_export_default_ot_tonnage" class="col-lg-3"/>
+                        </div>
+                    </setting>
                     <setting id="bean_export_lots" string="Lots export"
                              help="Découpage des OT de fèves en lots et préfixe des références de lot.">
                         <div class="row">

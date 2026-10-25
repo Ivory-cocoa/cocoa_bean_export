@@ -39,6 +39,16 @@ class ResConfigSettingsBeans(models.TransientModel):
         string="Tare d'un sac (kg)", digits=(6, 3), default=1.0,
         config_parameter='potting_management.tare_cocoa_beans',
         help="Poids d'un sac de jute vide : poids brut = net + sacs × tare.")
+    bean_export_max_ot_tonnage = fields.Float(
+        string="Tonnage maximal d'un OT (T)", digits=(10, 3), default=1000.0,
+        config_parameter='potting_management.max_ot_tonnage_cocoa_beans',
+        help="Plafond d'un ordre de transit de fèves : tout OT au-delà est "
+             "refusé (création, modification, génération, import).")
+    bean_export_default_ot_tonnage = fields.Float(
+        string="Tonnage proposé par OT (T)", digits=(10, 3), default=100.0,
+        config_parameter='potting_management.default_ot_tonnage_cocoa_beans',
+        help="Tonnage par OT proposé à la génération des OT d'un contrat "
+             "(jamais au-delà du tonnage maximal).")
     bean_export_max_lot_tonnage = fields.Float(
         string="Tonnage maximal d'un lot (T)", digits=(6, 3), default=25.0,
         config_parameter='potting_management.max_tonnage_cocoa_beans',
@@ -63,7 +73,8 @@ class ResConfigSettingsBeans(models.TransientModel):
         config_parameter='potting_management.lot_prefix_cocoa_beans')
 
     @api.constrains('bean_export_bag_weight_kg', 'bean_export_bag_tare_kg',
-                    'bean_export_max_lot_tonnage', 'bean_export_weight_franchise_pct')
+                    'bean_export_max_lot_tonnage', 'bean_export_weight_franchise_pct',
+                    'bean_export_max_ot_tonnage', 'bean_export_default_ot_tonnage')
     def _check_bean_export_settings(self):
         for settings in self:
             if settings.bean_export_bag_weight_kg <= 0:
@@ -72,6 +83,7 @@ class ResConfigSettingsBeans(models.TransientModel):
                 raise ValidationError(_("La tare d'un sac ne peut pas être négative."))
             if not 0 <= settings.bean_export_weight_franchise_pct <= 10:
                 raise ValidationError(_("La franchise de poids doit être comprise entre 0 et 10 %."))
+            settings._check_bean_ot_tonnages()
             if not 0 < settings.bean_export_max_lot_tonnage <= 50:
                 raise ValidationError(_(
                     "Le tonnage maximal d'un lot doit être compris entre 0 et 50 T."))
@@ -84,6 +96,27 @@ class ResConfigSettingsBeans(models.TransientModel):
                 .get_value(product_type, 'bulk'):
             return 0.0
         return super().get_packaging_tare_for_product(product_type)
+
+    def _check_bean_ot_tonnages(self):
+        self.ensure_one()
+        maximum = self.bean_export_max_ot_tonnage
+        if maximum <= 0:
+            raise ValidationError(_("Le tonnage maximal d'un OT doit être positif."))
+        if not 0 < self.bean_export_default_ot_tonnage <= maximum:
+            raise ValidationError(_(
+                "Le tonnage proposé par OT (%(default)s T) doit être compris entre 0 "
+                "et le tonnage maximal d'un OT (%(max)s T).",
+                default=self.bean_export_default_ot_tonnage, max=maximum))
+        # Un plafond sous un OT existant le rendrait impossible à modifier
+        over = self.env['potting.transit.order'].sudo().search([
+            ('product_type', '=', 'cocoa_beans'), ('state', '!=', 'cancelled'),
+            ('tonnage', '>', maximum + 0.0005)], order='tonnage desc')
+        if over:
+            raise ValidationError(_(
+                "%(count)s OT de fèves dépassent %(max)s T (le plus gros : %(name)s, "
+                "%(tonnage)s T). Choisissez un plafond d'au moins %(tonnage)s T, ou "
+                "réduisez d'abord ces OT.",
+                count=len(over), max=maximum, name=over[0].name, tonnage=over[0].tonnage))
 
     # Menus propres à une usine de transformation (production de semi-finis,
     # écran usine, atelier, vente locale des sous-produits) : sans objet chez

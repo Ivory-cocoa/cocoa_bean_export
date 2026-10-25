@@ -117,6 +117,8 @@
                 <tr><td>Nom commercial, sigle, NCC, code REX, ID RA</td><td>Vide : raison sociale, initiales, compte contribuable de la fiche société.</td></tr>
                 <tr><td>Exporter aussi des semi-finis</td><td>Non : fèves uniquement.</td></tr>
                 <tr><td>Conditionnement</td><td>Sacs de jute de 65 kg, tare 1 kg ; ou vrac (en kg, sans tare par unité).</td></tr>
+                <tr><td>Tonnage maximal d’un OT</td><td>1 000 t : tout OT au-delà est refusé. Ne peut pas descendre sous un OT de fèves en cours.</td></tr>
+                <tr><td>Tonnage proposé par OT</td><td>100 t, à la génération des OT d’un contrat (jamais au-delà du maximum).</td></tr>
                 <tr><td>Tonnage maximal d’un lot</td><td>25 t.</td></tr>
                 <tr><td>Contrôle qualité</td><td>Avertissement.</td></tr>
                 <tr><td>Franchise de poids à l’arrivée</td><td>0,5 %.</td></tr>

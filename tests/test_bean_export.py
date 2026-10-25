@@ -818,3 +818,44 @@ class TestBeanExportReadiness(TransactionCase):
         self.assertEqual(wizard.line_ids.filtered(lambda l: l.key == 'sites').status, 'ok')
         self.assertEqual(wizard.line_ids.filtered(
             lambda l: l.key == 'currency_rates').status, 'warning')
+
+
+@tagged('cocoa_bean_export', 'post_install', '-at_install')
+class TestBeanOtTonnage(BeanExportCase):
+    """Plafond d'un OT de fèves et tonnage proposé : réglables, cohérents."""
+
+    def _settings(self, **vals):
+        return self.env['res.config.settings'].create(vals)
+
+    def test_110_cap_applies_to_bean_ots_only(self):
+        self._settings(bean_export_max_ot_tonnage=200.0,
+                       bean_export_default_ot_tonnage=100.0).execute()
+        Settings = self.env['res.config.settings']
+        self.assertEqual(Settings.get_max_ot_tonnage_for_product('cocoa_beans'), 200.0)
+        self.assertEqual(Settings.get_max_ot_tonnage_for_product('cocoa_mass'), 1000.0)
+        with self.assertRaises(ValidationError):
+            self.env['potting.transit.order'].create({
+                'customer_id': self.customer.id, 'consignee_id': self.consignee.id,
+                'campaign_id': self.campaign.id, 'product_type': 'cocoa_beans',
+                'tonnage': 200.5})
+        with self.assertRaises(ValidationError):
+            self.ot.tonnage = 250.0
+
+    def test_111_default_must_not_exceed_cap(self):
+        with self.assertRaises(ValidationError):
+            self._settings(bean_export_max_ot_tonnage=80.0,
+                           bean_export_default_ot_tonnage=100.0)
+        self._settings(bean_export_max_ot_tonnage=80.0,
+                       bean_export_default_ot_tonnage=75.0).execute()
+        self.assertEqual(self.env['potting.generate.ot.from.order.wizard']
+                         ._get_default_tonnage_for_product_type('cocoa_beans'), 75.0)
+
+    def test_112_cap_cannot_go_below_an_existing_ot(self):
+        # L'OT du jeu d'essai fait 50 T
+        with self.assertRaises(ValidationError) as error:
+            self._settings(bean_export_max_ot_tonnage=40.0,
+                           bean_export_default_ot_tonnage=30.0)
+        self.assertIn(self.ot.name, str(error.exception))
+        self.ot.state = 'cancelled'
+        self._settings(bean_export_max_ot_tonnage=40.0,
+                       bean_export_default_ot_tonnage=30.0)
