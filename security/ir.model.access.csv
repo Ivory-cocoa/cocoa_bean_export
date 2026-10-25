@@ -29,3 +29,9 @@ access_bean_document_accountant,bean.export.document accountant,model_cocoa_bean
 access_bean_document_pdg,bean.export.document pdg,model_cocoa_bean_export_document,potting_management.group_potting_pdg,1,0,0,0
 access_bean_batch_import_shipping,bean.batch.import shipping,model_cocoa_bean_export_batch_import_wizard,potting_management.group_potting_shipping,1,1,1,1
 access_bean_batch_import_line_shipping,bean.batch.import.line shipping,model_cocoa_bean_export_batch_import_line,potting_management.group_potting_shipping,1,1,1,1
+access_bean_claim_manager,bean.export.claim manager,model_cocoa_bean_export_claim,potting_management.group_potting_manager,1,1,1,1
+access_bean_claim_shipping,bean.export.claim shipping,model_cocoa_bean_export_claim,potting_management.group_potting_shipping,1,1,1,0
+access_bean_claim_bl,bean.export.claim bl,model_cocoa_bean_export_claim,potting_management.group_potting_bl_manager,1,1,1,0
+access_bean_claim_accountant,bean.export.claim accountant,model_cocoa_bean_export_claim,potting_management.group_potting_accountant,1,1,0,0
+access_bean_claim_commercial,bean.export.claim commercial,model_cocoa_bean_export_claim,potting_management.group_potting_commercial,1,0,0,0
+access_bean_claim_pdg,bean.export.claim pdg,model_cocoa_bean_export_claim,potting_management.group_potting_pdg,1,0,0,0

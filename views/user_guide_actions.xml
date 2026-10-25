@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_user_guide_beans" model="ir.actions.act_url">
+        <field name="name">Guide Export des fèves</field>
+        <field name="url">/aide/beans</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

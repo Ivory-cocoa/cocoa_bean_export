@@ -49,18 +49,25 @@ class ResConfigSettingsBeans(models.TransientModel):
         help="À la constitution d'un lot export : lot d'usinage non conforme "
              "à la norme de sa certification, ou de grade inférieur à celui "
              "de la CV de l'OT.")
+    bean_export_weight_franchise_pct = fields.Float(
+        string="Franchise de poids à l'arrivée (%)", digits=(5, 3), default=0.5,
+        config_parameter='cocoa_bean_export.weight_franchise_pct',
+        help="Perte de poids admise entre le net embarqué et le net débarqué "
+             "avant réclamation (valeur proposée sur chaque réclamation).")
     bean_export_lot_prefix = fields.Char(
         string="Préfixe des lots de fèves", default='F',
         config_parameter='potting_management.lot_prefix_cocoa_beans')
 
     @api.constrains('bean_export_bag_weight_kg', 'bean_export_bag_tare_kg',
-                    'bean_export_max_lot_tonnage')
+                    'bean_export_max_lot_tonnage', 'bean_export_weight_franchise_pct')
     def _check_bean_export_settings(self):
         for settings in self:
             if settings.bean_export_bag_weight_kg <= 0:
                 raise ValidationError(_("Le poids nominal d'un sac doit être positif."))
             if settings.bean_export_bag_tare_kg < 0:
                 raise ValidationError(_("La tare d'un sac ne peut pas être négative."))
+            if not 0 <= settings.bean_export_weight_franchise_pct <= 10:
+                raise ValidationError(_("La franchise de poids doit être comprise entre 0 et 10 %."))
             if not 0 < settings.bean_export_max_lot_tonnage <= 50:
                 raise ValidationError(_(
                     "Le tonnage maximal d'un lot doit être compris entre 0 et 50 T."))
@@ -89,12 +96,25 @@ class ResConfigSettingsBeans(models.TransientModel):
 
     @api.model
     def _bean_export_sync_menus(self):
-        """Masque (ou rétablit) les menus d'usine selon « fèves uniquement »."""
+        """Aligne l'interface sur « fèves uniquement » : menus d'usine et
+        filtres de recherche des semi-finis (groupe technique accordé à tous
+        les utilisateurs internes, ou retiré — comme un implied_group)."""
         show = not self.env['potting.product.spec']._is_beans_only()
         for xmlid in self._BEAN_EXPORT_FACTORY_MENUS:
             menu = self.env.ref(xmlid, raise_if_not_found=False)
             if menu and menu.active != show:
                 menu.sudo().active = show
+        semi_finished = self.env.ref(
+            'cocoa_bean_export.group_bean_export_semi_finished', raise_if_not_found=False)
+        internal = self.env.ref('base.group_user').sudo()
+        if semi_finished:
+            semi_finished = semi_finished.sudo()
+            if show and semi_finished not in internal.implied_ids:
+                internal.write({'implied_ids': [(4, semi_finished.id)]})
+            elif not show and semi_finished in internal.implied_ids:
+                internal.write({'implied_ids': [(3, semi_finished.id)]})
+                # Retirer l'implication ne retire pas les membres (Odoo)
+                semi_finished.write({'users': [(3, user.id) for user in semi_finished.users]})
         return True
 
     def set_values(self):

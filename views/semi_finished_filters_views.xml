@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Filtres des semi-finis : visibles seulement si la société exporte
+         aussi des semi-finis (groupe accordé par le réglage). -->
+    <record id="potting_lot_view_search_bean_export" model="ir.ui.view">
+        <field name="name">potting.lot.search.bean.export</field>
+        <field name="model">potting.lot</field>
+        <field name="inherit_id" ref="potting_management.potting_lot_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='cocoa_mass']" position="before">
+                <filter string="Fèves de cacao" name="cocoa_beans"
+                        domain="[('product_type', '=', 'cocoa_beans')]"/>
+            </xpath>
+            <xpath expr="//filter[@name='cocoa_mass']" position="attributes">
+                <attribute name="groups">cocoa_bean_export.group_bean_export_semi_finished</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='cocoa_butter']" position="attributes">
+                <attribute name="groups">cocoa_bean_export.group_bean_export_semi_finished</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='cocoa_cake']" position="attributes">
+                <attribute name="groups">cocoa_bean_export.group_bean_export_semi_finished</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='cocoa_powder']" position="attributes">
+                <attribute name="groups">cocoa_bean_export.group_bean_export_semi_finished</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="potting_delivery_note_view_search_bean_export" model="ir.ui.view">
+        <field name="name">potting.delivery.note.search.bean.export</field>
+        <field name="model">potting.delivery.note</field>
+        <field name="inherit_id" ref="potting_management.potting_delivery_note_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='cocoa_mass']" position="before">
+                <filter string="Fèves de cacao" name="cocoa_beans"
+                        domain="[('product_type', '=', 'cocoa_beans')]"/>
+            </xpath>
+            <xpath expr="//filter[@name='cocoa_mass']" position="attributes">
+                <attribute name="groups">cocoa_bean_export.group_bean_export_semi_finished</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='cocoa_butter']" position="attributes">
+                <attribute name="groups">cocoa_bean_export.group_bean_export_semi_finished</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='cocoa_cake']" position="attributes">
+                <attribute name="groups">cocoa_bean_export.group_bean_export_semi_finished</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='cocoa_powder']" position="attributes">
+                <attribute name="groups">cocoa_bean_export.group_bean_export_semi_finished</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

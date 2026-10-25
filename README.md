@@ -71,6 +71,15 @@ MultiPolygon, coordonnées [longitude, latitude] en Côte d'Ivoire, polygones
 fermés) puis **vérifié par un Manager**. Le lot export et le BL en héritent ;
 le dossier EUDR du BL (socle) inclut les parcelles fournies.
 
+## Réclamations à l'arrivée
+
+Expédition ▸ Réclamations à l'arrivée (ou bouton du BL), une seule en cours
+par BL. Perte = net embarqué − net débarqué ; au-delà de la franchise
+(0,5 % par défaut, réglable) elle est valorisée au prix au kg de la facture ;
+s'y ajoute un montant qualité (expertise, arbitrage). Cycle : brouillon →
+présentée → accordée (Manager, jamais au-delà du réclamé) → réglée par un
+avoir (assistant du socle, pré-rempli) ou par une pièce comptable externe.
+
 ## Import de l'historique
 
 Production ▸ Importer des lots d'usinage : classeur .xlsx dont les colonnes
@@ -81,8 +90,20 @@ lot du site, site, date, poids brut). « Analyser » contrôle sans rien créer
 téléchargeable. Les contrats, CV, formules et OT s'importent avec les
 assistants du socle (« Fèves » reconnu).
 
+## Guide utilisateur
+
+Aide ▸ Guide Export des fèves (`/aide/beans`, FR/EN, PDF) : chapitres
+filtrés par profil.
+
+## Mode « fèves uniquement »
+
+Semi-finis retirés des listes de choix, refusés à l'enregistrement, cartes
+du tableau de bord et menus d'usine masqués, filtres de recherche « Masse /
+Beurre / Cake / Poudre » cachés (groupe technique accordé ou retiré selon le
+réglage).
+
 ## Tests
 
-`--test-tags /cocoa_bean_export`. Les tests de `potting_management` se
+`--test-tags /cocoa_bean_export` (40 tests). Les tests de `potting_management` se
 lancent sur une base **sans** ce module (le mode fèves uniquement y refuse
 les semi-finis).

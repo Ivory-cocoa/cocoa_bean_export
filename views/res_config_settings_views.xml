@@ -27,6 +27,13 @@
                              help="Les mesures d'un lot d'usinage sont évaluées avec la norme d'acceptation de sa certification et la grille des grades de la campagne fèves (Configuration ▸ Qualité des fèves).">
                         <field name="bean_export_quality_control" widget="radio"/>
                     </setting>
+                    <setting id="bean_export_claims" string="Réclamations à l'arrivée"
+                             help="Perte de poids admise (net embarqué − net débarqué) avant réclamation, proposée sur chaque réclamation.">
+                        <div class="row">
+                            <label for="bean_export_weight_franchise_pct" class="col-lg-5 o_light_label"/>
+                            <field name="bean_export_weight_franchise_pct" class="col-lg-3"/>
+                        </div>
+                    </setting>
                     <setting id="bean_export_lots" string="Lots export"
                              help="Découpage des OT de fèves en lots et préfixe des références de lot.">
                         <div class="row">

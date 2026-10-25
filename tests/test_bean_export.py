@@ -21,6 +21,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tests import Form, TransactionCase, tagged
 
 from odoo.addons.potting_management.tests.common import get_xof, make_campaign
+from odoo.addons.potting_management.tests.common_d6 import set_ot_d6
 
 # Sélections qui ne décrivent PAS un produit exporté (usine, marché local,
 # déblocage de fèves pour la transformation) : volontairement sans fèves.
@@ -83,6 +84,54 @@ class BeanExportCase(TransactionCase):
         if confirm:
             batch.action_confirm()
         return batch
+
+    def _shipped_bl(self, ticket, cert=None, geojson=None):
+        batch = self._batch(bags=400, gross=26400.0, tare=400.0, ticket=ticket,
+                            cert=cert, confirm=False)
+        if geojson:
+            batch.eudr_geojson = base64.b64encode(geojson.encode())
+        batch.action_confirm()
+        ot = self.env['potting.transit.order'].create({
+            'customer_id': self.customer.id, 'consignee_id': self.consignee.id,
+            'campaign_id': self.campaign.id, 'product_type': 'cocoa_beans',
+            'tonnage': 26.0})
+        lot = self.env['potting.lot'].create({
+            'name': 'DOC-%s' % ticket, 'base_name': 'DOC-%s' % ticket,
+            'transit_order_id': ot.id, 'product_type': 'cocoa_beans',
+            'target_tonnage': 26.0,
+            'certification_id': cert.id if cert else False})
+        self._constitute(lot, [(batch, 400)], complete=True)
+        container = self.env['potting.container'].create({
+            'name': 'CONT-%s' % ticket, 'container_type': '20'})
+        lot.write({'container_id': container.id})
+        lot.with_context(bypass_potted_lock=True).sudo().write({'state': 'potted'})
+        contract = self.env['potting.customer.order'].create({
+            'customer_id': self.customer.id, 'product_type': 'cocoa_beans',
+            'date_order': date.today(), 'contract_number': 'CTR-%s' % ticket,
+            'contract_tonnage': 1000.0, 'unit_price': 2500000})
+        self.env['potting.ot.contract.allocation'].create({
+            'transit_order_id': ot.id, 'customer_order_id': contract.id,
+            'tonnage_alloue': ot.tonnage})
+        bl = self.env['potting.delivery.note'].create({
+            'transit_order_id': ot.id,
+            'lot_ids': [(6, 0, lot.ids)],
+            'bl_external_number': 'BLX-%s' % ticket,
+            'shipped_weight': 26.0,
+            'number_of_bags': 400,
+        })
+        set_ot_d6(self.env, ot, 1.0, reference='D6-%s' % ticket)
+        return bl, batch, lot
+
+    def _fill(self, bl, doc_type, days_ago=0, attach=True):
+        doc = bl.bean_document_ids.filtered(lambda d: d.type_id == doc_type)
+        vals = {'number': '%s-001' % doc_type.code,
+                'date': date.today() - timedelta(days=days_ago)}
+        if attach:
+            vals['attachment_ids'] = [(0, 0, {
+                'name': '%s.pdf' % doc_type.code,
+                'datas': base64.b64encode(b'%PDF-1.4 test')})]
+        doc.write(vals)
+        return doc
 
     def _constitute(self, lot, allocations, complete=False):
         wizard = self.env['cocoa.bean.lot.constitution.wizard'].create({
@@ -149,9 +198,16 @@ class TestBeanProductType(BeanExportCase):
         menu = self.env.ref('potting_management.menu_potting_factory_screen')
         Settings._bean_export_sync_menus()
         self.assertFalse(menu.active)
+        group = self.env.ref('cocoa_bean_export.group_bean_export_semi_finished')
+        admin = self.env.ref('base.user_admin')
+        self.assertNotIn(admin, group.users)
         self.ICP.set_param('cocoa_bean_export.with_semi_finished', 'True')
         Settings._bean_export_sync_menus()
         self.assertTrue(menu.active)
+        self.assertIn(admin, group.users, "Filtres semi-finis visibles")
+        self.ICP.set_param('cocoa_bean_export.with_semi_finished', 'False')
+        Settings._bean_export_sync_menus()
+        self.assertNotIn(admin, group.users)
 
     def test_06_formule_coefficient_is_one(self):
         Formule = self.env['potting.formule']
@@ -471,55 +527,6 @@ class TestBeanShipmentDocuments(BeanExportCase):
         cls.phyto = cls.env.ref('cocoa_bean_export.doc_type_phyto')
         cls.fumigation = cls.env.ref('cocoa_bean_export.doc_type_fumigation')
 
-    def _shipped_bl(self, ticket, cert=None, geojson=None):
-        from odoo.addons.potting_management.tests.common_d6 import set_ot_d6
-        batch = self._batch(bags=400, gross=26400.0, tare=400.0, ticket=ticket,
-                            cert=cert, confirm=False)
-        if geojson:
-            batch.eudr_geojson = base64.b64encode(geojson.encode())
-        batch.action_confirm()
-        ot = self.env['potting.transit.order'].create({
-            'customer_id': self.customer.id, 'consignee_id': self.consignee.id,
-            'campaign_id': self.campaign.id, 'product_type': 'cocoa_beans',
-            'tonnage': 26.0})
-        lot = self.env['potting.lot'].create({
-            'name': 'DOC-%s' % ticket, 'base_name': 'DOC-%s' % ticket,
-            'transit_order_id': ot.id, 'product_type': 'cocoa_beans',
-            'target_tonnage': 26.0,
-            'certification_id': cert.id if cert else False})
-        self._constitute(lot, [(batch, 400)], complete=True)
-        container = self.env['potting.container'].create({
-            'name': 'CONT-%s' % ticket, 'container_type': '20'})
-        lot.write({'container_id': container.id})
-        lot.with_context(bypass_potted_lock=True).sudo().write({'state': 'potted'})
-        contract = self.env['potting.customer.order'].create({
-            'customer_id': self.customer.id, 'product_type': 'cocoa_beans',
-            'date_order': date.today(), 'contract_number': 'CTR-%s' % ticket,
-            'contract_tonnage': 1000.0, 'unit_price': 2500000})
-        self.env['potting.ot.contract.allocation'].create({
-            'transit_order_id': ot.id, 'customer_order_id': contract.id,
-            'tonnage_alloue': ot.tonnage})
-        bl = self.env['potting.delivery.note'].create({
-            'transit_order_id': ot.id,
-            'lot_ids': [(6, 0, lot.ids)],
-            'bl_external_number': 'BLX-%s' % ticket,
-            'shipped_weight': 26.0,
-            'number_of_bags': 400,
-        })
-        set_ot_d6(self.env, ot, 1.0, reference='D6-%s' % ticket)
-        return bl, batch, lot
-
-    def _fill(self, bl, doc_type, days_ago=0, attach=True):
-        doc = bl.bean_document_ids.filtered(lambda d: d.type_id == doc_type)
-        vals = {'number': '%s-001' % doc_type.code,
-                'date': date.today() - timedelta(days=days_ago)}
-        if attach:
-            vals['attachment_ids'] = [(0, 0, {
-                'name': '%s.pdf' % doc_type.code,
-                'datas': base64.b64encode(b'%PDF-1.4 test')})]
-        doc.write(vals)
-        return doc
-
     def test_50_bl_receives_applicable_document_lines(self):
         bl, _batch, _lot = self._shipped_bl('DOC-50')
         types = bl.bean_document_ids.mapped('type_id')
@@ -685,3 +692,96 @@ class TestBeanBatchImport(BeanExportCase):
         action = wizard.action_download_template()
         self.assertTrue(wizard.template_file)
         self.assertIn('download=true', action['url'])
+
+
+@tagged('cocoa_bean_export', 'post_install', '-at_install')
+class TestBeanArrivalClaim(BeanExportCase):
+    """Réclamation à l'arrivée : perte au-delà de la franchise, avoir."""
+
+    def _invoiced_bl(self, ticket):
+        bl, batch, lot = self._shipped_bl(ticket)
+        for doc_type in bl.bean_document_ids.mapped('type_id'):
+            self._fill(bl, doc_type)
+        bl.action_confirm()
+        invoice = self.env['potting.customer.invoice'].create({
+            'partner_id': self.customer.id,
+            'transit_order_id': bl.transit_order_id.id,
+            'delivery_note_id': bl.id,
+            'invoiced_tonnage': 26.0,
+            'currency_id': get_xof(self.env).id,
+            'line_ids': [(0, 0, {'name': 'Fèves de cacao', 'quantity': 26.0,
+                                 'price_unit': 2500000.0})],
+        })
+        invoice.write({'state': 'confirmed'})
+        return bl, invoice
+
+    def test_80_weight_claim_settled_by_credit_note(self):
+        bl, invoice = self._invoiced_bl('REC-80')
+        claim = self.env['cocoa.bean.export.claim'].create({
+            'delivery_note_id': bl.id, 'landed_net_kg': 25800.0})
+        self.assertEqual(claim.shipped_net_kg, 26000.0)
+        self.assertEqual(claim.invoice_id, invoice)
+        self.assertEqual(claim.franchise_pct, 0.5)
+        self.assertEqual(claim.weight_loss_kg, 200.0)
+        self.assertEqual(claim.franchise_kg, 130.0)
+        self.assertEqual(claim.claimable_kg, 70.0)
+        self.assertAlmostEqual(claim.unit_price_kg, invoice.amount_total / 26000.0, places=4)
+        claim.action_submit()
+        self.assertEqual(claim.agreed_amount, claim.claimed_amount)
+        claim.action_agree()
+        action = claim.action_create_credit_note()
+        wizard = self.env[action['res_model']].with_context(**action['context']).create({})
+        self.assertEqual(wizard.mode, 'amount')
+        wizard.with_context(**action['context']).action_create()
+        self.assertEqual(claim.state, 'settled')
+        self.assertTrue(claim.credit_note_id)
+        self.assertAlmostEqual(claim.credit_note_id.amount_total, claim.agreed_amount, places=0)
+
+    def test_81_loss_within_franchise_claims_nothing(self):
+        bl, _invoice = self._invoiced_bl('REC-81')
+        claim = self.env['cocoa.bean.export.claim'].create({
+            'delivery_note_id': bl.id, 'landed_net_kg': 25900.0})
+        self.assertEqual(claim.claimable_kg, 0.0)
+        with self.assertRaises(UserError):
+            claim.action_submit()
+        claim.quality_claim_amount = 50000.0
+        claim.action_submit()
+        self.assertEqual(claim.claimed_amount, 50000.0)
+
+    def test_82_accounting_settlement_requires_reference(self):
+        bl, _invoice = self._invoiced_bl('REC-82')
+        claim = self.env['cocoa.bean.export.claim'].create({
+            'delivery_note_id': bl.id, 'quality_claim_amount': 10000.0})
+        claim.action_submit()
+        claim.action_agree()
+        with self.assertRaises(UserError):
+            claim.action_mark_settled_accounting()
+        claim.write({'accounting_ref': 'OD-2026-118', 'accounting_date': date.today()})
+        claim.action_mark_settled_accounting()
+        self.assertEqual(claim.settlement_mode, 'accounting')
+        with self.assertRaises(UserError):
+            claim.action_cancel()
+
+    def test_83_one_open_claim_per_bl(self):
+        bl, _invoice = self._invoiced_bl('REC-83')
+        Claim = self.env['cocoa.bean.export.claim']
+        first = Claim.create({'delivery_note_id': bl.id})
+        with self.assertRaises(ValidationError):
+            Claim.create({'delivery_note_id': bl.id})
+        first.action_cancel()
+        Claim.create({'delivery_note_id': bl.id})
+
+
+@tagged('cocoa_bean_export', 'post_install', '-at_install')
+class TestBeanExportGuide(TransactionCase):
+    """Le guide s'affiche dans les deux langues sans référence cassée."""
+
+    def test_90_guide_renders_without_missing_reference(self):
+        Guide = self.env['icp.user.guide']
+        for lang in ('fr', 'en'):
+            values = Guide._prepare_values('beans', lang)
+            self.assertEqual(len(values['chapters']), 9)
+            for chapter in values['chapters']:
+                self.assertTrue(chapter['template'], "%s/%s" % (lang, chapter['key']))
+                self.env['ir.qweb']._render(chapter['template'], values)
+            self.assertFalse(values['g'].missing, values['g'].missing)

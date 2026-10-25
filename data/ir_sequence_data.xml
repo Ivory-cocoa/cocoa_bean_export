@@ -10,6 +10,14 @@
             <field name="company_id" eval="False"/>
         </record>
 
+        <record id="seq_bean_export_claim" model="ir.sequence">
+            <field name="name">Réclamation à l'arrivée (fèves)</field>
+            <field name="code">cocoa.bean.export.claim</field>
+            <field name="prefix">REC/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
         <!-- Lots export de fèves (client principal) : F10001, F10002…
              Même logique que potting.lot.cocoa_mass & co. du socle. -->
         <record id="seq_potting_lot_cocoa_beans" model="ir.sequence">

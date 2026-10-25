@@ -15,6 +15,20 @@
               sequence="6"
               groups="potting_management.group_potting_shipping,potting_management.group_potting_manager"/>
 
+    <menuitem id="menu_cocoa_bean_export_claim"
+              name="Réclamations à l'arrivée"
+              parent="potting_management.menu_potting_logistics"
+              action="action_cocoa_bean_export_claim"
+              sequence="45"
+              groups="potting_management.group_potting_shipping,potting_management.group_potting_bl_manager,potting_management.group_potting_accountant"/>
+
+    <menuitem id="menu_bean_export_help_guide"
+              name="Guide Export des fèves"
+              parent="potting_management.menu_potting_help"
+              action="action_user_guide_beans"
+              sequence="5"
+              groups="potting_management.group_potting_commercial,potting_management.group_potting_shipping,potting_management.group_potting_accountant,potting_management.group_potting_production,potting_management.group_potting_container_manager,potting_management.group_potting_bl_manager,potting_management.group_potting_payment_manager,potting_management.group_potting_pdg,potting_management.group_potting_cv_manager"/>
+
     <!-- Référentiels qualité du module fèves (normes, grilles de grades),
          modifiables par le Manager Export -->
     <menuitem id="menu_bean_export_quality_config"

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "Exportation des fèves de cacao",
-    'version': '17.0.1.1.0',
+    'version': '17.0.1.2.0',
     'category': 'Inventory/Logistics',
     'summary': "Export de fèves de cacao brutes sur le socle Gestion des Exportations",
     'description': """
@@ -51,6 +51,11 @@ Propre aux fèves :
         'views/res_config_settings_views.xml',
         'views/bean_quality_config_views.xml',
         'views/bean_export_document_views.xml',
+        'views/semi_finished_filters_views.xml',
+        'views/bean_export_claim_views.xml',
+        'views/user_guide_actions.xml',
+        'views/guide/beans_guide_fr.xml',
+        'views/guide/beans_guide_en.xml',
         'views/menu_views.xml',
     ],
     'installable': True,

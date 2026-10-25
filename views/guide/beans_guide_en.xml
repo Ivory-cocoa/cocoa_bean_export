@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    "Cocoa bean exports" guide — ENGLISH. Same structure as beans_guide_fr.xml:
+    cocoa_bean_export.guide_beans_<chapter>_en.
+-->
+<odoo>
+
+    <template id="guide_beans_start_en" name="Bean guide - Process (en)">
+        <p>Raw bean exports (HS code 1801 00 00 00) follow the <b>Exports</b> module process: contract, CCC sales confirmation and FO1 form, transit order (TO), lots, containers, B/L, D6, invoice, support or levy repayment. This guide only covers what is specific to beans; everything else is in the Exports guide.</p>
+        <h3>The steps</h3>
+        <ol>
+            <li><b>Processing batch</b>: the site's outgoing weighing slip (site lot number, bags, gross, tare, net, quality, certification).</li>
+            <li><b>Bean TO</b> and lot generation (one lot ≈ one container).</li>
+            <li><b>Build the lot</b>: allocate bags from processing batches. The lot tonnage is the <b>weighed net weight</b>.</li>
+            <li>Stuffing, B/L, D6 as for any export.</li>
+            <li><b>Shipping documents</b> of the B/L (phytosanitary, fumigation, origin, quality…).</li>
+            <li><b>EUDR</b>: B/L dossier for the importer's due diligence statement.</li>
+            <li>Invoice, then an <b>arrival claim</b> if the buyer finds a weight loss or a quality defect.</li>
+        </ol>
+        <h3>What differs from semi-finished products</h3>
+        <ul>
+            <li>No factory production: lots are filled from processing batches, never by a "production".</li>
+            <li>The form conversion coefficient is 1: CCC levies are based on the bean tonnage.</li>
+            <li>In "beans only" mode (default), liquor, butter, cake and powder disappear from lists, and factory menus are hidden.</li>
+        </ul>
+    </template>
+
+    <template id="guide_beans_batches_en" name="Bean guide - Processing batches (en)">
+        <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_batch')"/> lists processing batches; the <i>Available</i> filter shows those with bags left to allocate.</p>
+        <h3>Entering a processing batch</h3>
+        <ol>
+            <li>Processing site, site lot number, weighing slip number, date.</li>
+            <li>Bags, gross weight and tare: the <b>net</b> is computed (gross − tare).</li>
+            <li>Certification (empty for conventional beans) and quality measurements (<i>Quality measurements</i> tab).</li>
+            <li><span class="btn-ui">Confirm</span>: only a confirmed batch can be allocated.</li>
+        </ol>
+        <p>A weighing slip cannot be entered twice for the same site. Once allocated, the batch's weights, site and certification are locked.</p>
+        <h3>Importing a workbook</h3>
+        <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_batch_import')"/>: an .xlsx file whose columns are recognised by their header, in any order. Required: site lot number, site, date, gross weight. French numbers ("26 400,5") and dd/mm/yyyy dates are accepted.</p>
+        <ol>
+            <li><span class="btn-ui">Download the template</span> to start from scratch.</li>
+            <li><span class="btn-ui">Analyse</span>: each row is checked (site, certification, weights, duplicates); nothing is created.</li>
+            <li><span class="btn-ui">Import the valid rows</span>: as drafts, or confirmed if ticked. Rows in error are skipped; fix them in the file and run again.</li>
+        </ol>
+    </template>
+
+    <template id="guide_beans_constitution_en" name="Bean guide - Building lots (en)">
+        <p>From the export lot (<t t-out="g.menu('potting_management.menu_potting_lot')"/>), button <span class="btn-ui">Build the lot</span>.</p>
+        <ol>
+            <li>Add one or more processing batches: only confirmed batches with the <b>same certification</b> as the lot are offered.</li>
+            <li>Enter the number of bags (bulk: kg). The allocated net is the weighed net pro rata to the bags; the <b>last bags</b> of a batch take its exact remainder.</li>
+            <li>Tick <b>Full lot</b> when the lot is full: its target becomes its actual weight and it moves to <span class="state">Ready for stuffing</span>.</li>
+        </ol>
+        <p>If the weight exceeds the lot target, Odoo refuses unless "Full lot" is ticked (50 t maximum per lot). The certification of a built lot can no longer be changed.</p>
+    </template>
+
+    <template id="guide_beans_quality_en" name="Bean guide - Quality (en)">
+        <p>A processing batch's measurements are assessed against two references of the beans module:</p>
+        <ul>
+            <li>the <b>acceptance standard</b> of its certification (otherwise the ordinary beans standard) → <span class="state">Compliant</span> or <span class="state">Non-compliant</span>;</li>
+            <li>the bean campaign's <b>grade grid</b> → Grade 1, Grade 2 or sub-grade, compared with the grade of the TO's sales confirmation.</li>
+        </ul>
+        <p>Both are edited in <t t-out="g.menu('cocoa_bean_export.menu_bean_export_quality_standard')"/> and <t t-out="g.menu('cocoa_bean_export.menu_bean_export_cocoa_campaign')"/>. After a change, click <span class="btn-ui">Re-assess</span> on the batch.</p>
+        <h3>When building a lot</h3>
+        <table>
+            <thead><tr><th>Setting</th><th>Effect</th></tr></thead>
+            <tbody>
+                <tr><td>Off</td><td>No check.</td></tr>
+                <tr><td>Warning (default)</td><td>Findings are shown and logged on the lot; the allocation goes through.</td></tr>
+                <tr><td>Blocking</td><td>The allocation is refused. A <t t-out="g.group('potting_management.group_potting_manager')"/> can override by ticking "Override the quality check" with a reason, logged on the lot.</td></tr>
+            </tbody>
+        </table>
+    </template>
+
+    <template id="guide_beans_documents_en" name="Bean guide - Documents (en)">
+        <p>Each bean B/L (<t t-out="g.menu('potting_management.menu_potting_delivery_note')"/>) has an <b>Export documents</b> tab: one row per document with number, date, issuer and attachments. The status tells what is missing: <span class="state">Missing</span>, <span class="state">Incomplete</span> (number, date or scan), <span class="state">Out of validity</span>, <span class="state">Complete</span>.</p>
+        <p>Required documents are checked on <b>B/L confirmation</b> or <b>invoice confirmation</b>, depending on their setting: while one is missing, confirmation is refused and the message lists what is missing. <span class="btn-ui">Add missing documents</span> completes the list if a type was added later.</p>
+        <p>The list and requirements are set in <t t-out="g.menu('cocoa_bean_export.menu_bean_export_document_type')"/>: when required, mandatory attachment, validity in days before shipment (fumigation), certified lots or EU destination only.</p>
+    </template>
+
+    <template id="guide_beans_eudr_en" name="Bean guide - EUDR (en)">
+        <p><b>EUDR</b> tab of the processing batch. Two ways to trace the beans:</p>
+        <ul>
+            <li><b>Source bean lots</b>, when the upstream chain (purchases, plots) is tracked in Odoo: their eligibility prevails.</li>
+            <li><b>Supplied geolocation</b>: the GeoJSON file provided by the site or cooperatives. Odoo checks it on upload (structure, coordinates in Côte d'Ivoire in [longitude, latitude] order, closed polygons). The batch stays <span class="state">To complete / check</span> until a <t t-out="g.group('potting_management.group_potting_manager')"/> clicks <span class="btn-ui">Mark as verified</span>. A new file cancels the verification.</li>
+        </ul>
+        <p>The export lot takes the state of its batches and the B/L that of its lots. On an eligible B/L, <span class="btn-ui">Générer le dossier EUDR</span> produces the GeoJSON (source plots and supplied plots) and the summary for the importer, who files the due diligence statement (DDS). Its reference and verification numbers are then entered on the B/L, which freezes the dossier.</p>
+    </template>
+
+    <template id="guide_beans_claims_en" name="Bean guide - Claims (en)">
+        <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_claim')"/>, or the B/L's <span class="btn-ui">Claims</span> button. One open claim per B/L.</p>
+        <h3>Computation</h3>
+        <p>Shipped net weight, invoice and price per kg come from the B/L. Enter the landed net weight (arrival weight certificate):</p>
+        <ul>
+            <li>loss = shipped net − landed net;</li>
+            <li>franchise = shipped net × franchise % (0.5% by default, configurable);</li>
+            <li>weight amount = (loss − franchise) × price per kg;</li>
+            <li>claimed amount = weight amount + quality amount (survey or arbitration).</li>
+        </ul>
+        <h3>Life cycle</h3>
+        <ol>
+            <li><span class="btn-ui">Submitted by the buyer</span>: the agreed amount defaults to the claimed amount; adjust it after negotiation.</li>
+            <li>A <t t-out="g.group('potting_management.group_potting_manager')"/> <span class="btn-ui">Agrees</span> (never above the claim) or <span class="btn-ui">Rejects</span>.</li>
+            <li>Settlement: <span class="btn-ui">Issue the credit note</span> opens the pre-filled credit note wizard (free amount, reason); or <span class="btn-ui">Settled (accounting entry)</span> with the number and date of the accounting software entry.</li>
+        </ol>
+    </template>
+
+    <template id="guide_beans_settings_en" name="Bean guide - Settings (en)">
+        <p>Settings ▸ Gestion des Empotages, blocks <b>Company identity</b> and <b>Cocoa bean exports</b>.</p>
+        <table>
+            <thead><tr><th>Setting</th><th>Default</th></tr></thead>
+            <tbody>
+                <tr><td>Trade name, acronym, NCC, REX code, RA ID</td><td>Empty: company name, initials, tax number of the company form.</td></tr>
+                <tr><td>Also export semi-finished products</td><td>No: beans only.</td></tr>
+                <tr><td>Packaging</td><td>65 kg jute bags, 1 kg tare; or bulk (in kg, no per-unit tare).</td></tr>
+                <tr><td>Maximum lot tonnage</td><td>25 t.</td></tr>
+                <tr><td>Quality check</td><td>Warning.</td></tr>
+                <tr><td>Arrival weight franchise</td><td>0.5%.</td></tr>
+                <tr><td>Lot prefix</td><td>F.</td></tr>
+            </tbody>
+        </table>
+        <h3>Before go-live</h3>
+        <ol>
+            <li>Default currency and exchange rates (a foreign-currency invoice without a rate is refused).</li>
+            <li>Company identity and bank accounts.</li>
+            <li>Processing sites, certifications, customers, forwarders, ports.</li>
+            <li>Acceptance standards, campaign grade grid, required documents.</li>
+            <li>History import: contracts, sales confirmations, forms, TOs (Exports module wizards), then processing batches.</li>
+        </ol>
+    </template>
+
+    <template id="guide_beans_faq_en" name="Bean guide - FAQ (en)">
+        <table>
+            <thead><tr><th>Message</th><th>What to do</th></tr></thead>
+            <tbody>
+                <tr><td>"… n'est pas exporté par cette société (réglage Fèves uniquement)"</td><td>Choose "Fèves de cacao", or tick "Also export semi-finished products".</td></tr>
+                <tr><td>"Certification incompatible…"</td><td>An export lot does not mix certifications: pick batches with the lot's certification.</td></tr>
+                <tr><td>"Le lot … atteindrait … T pour une cible de …"</td><td>Reduce the bags, or tick "Full lot".</td></tr>
+                <tr><td>"Contrôle qualité (blocage)"</td><td>Non-compliant batch or grade below the sales confirmation: use another batch, or ask a Manager for an override.</td></tr>
+                <tr><td>"Documents d'export incomplets"</td><td>Complete the B/L's Export documents tab (number, date, scan, validity).</td></tr>
+                <tr><td>"… hors de Côte d'Ivoire"</td><td>Latitude and longitude are often swapped in the GeoJSON: the expected order is [longitude, latitude].</td></tr>
+            </tbody>
+        </table>
+    </template>
+
+</odoo>

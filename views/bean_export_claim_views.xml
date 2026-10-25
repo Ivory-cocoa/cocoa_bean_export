@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cocoa_bean_export_claim_view_tree" model="ir.ui.view">
+        <field name="name">cocoa.bean.export.claim.tree</field>
+        <field name="model">cocoa.bean.export.claim</field>
+        <field name="arch" type="xml">
+            <tree decoration-muted="state in ('cancelled', 'rejected')"
+                  decoration-success="state == 'settled'">
+                <field name="name"/>
+                <field name="claim_date"/>
+                <field name="delivery_note_id"/>
+                <field name="customer_id"/>
+                <field name="claimable_kg" sum="kg"/>
+                <field name="claimed_amount" sum="Réclamé"/>
+                <field name="agreed_amount" sum="Accordé"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state in ('submitted', 'agreed')"
+                       decoration-success="state == 'settled'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="cocoa_bean_export_claim_view_form" model="ir.ui.view">
+        <field name="name">cocoa.bean.export.claim.form</field>
+        <field name="model">cocoa.bean.export.claim</field>
+        <field name="arch" type="xml">
+            <form string="Réclamation à l'arrivée">
+                <header>
+                    <button name="action_submit" type="object" string="Présentée par l'acheteur"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_agree" type="object" string="Accorder"
+                            class="btn-primary" invisible="state != 'submitted'"
+                            groups="potting_management.group_potting_manager"/>
+                    <button name="action_reject" type="object" string="Rejeter"
+                            invisible="state not in ('draft', 'submitted')"
+                            groups="potting_management.group_potting_manager"
+                            confirm="Rejeter cette réclamation ?"/>
+                    <button name="action_create_credit_note" type="object" string="Émettre l'avoir"
+                            class="btn-primary" invisible="state != 'agreed'"
+                            groups="potting_management.group_potting_manager"/>
+                    <button name="action_mark_settled_accounting" type="object"
+                            string="Réglée (pièce comptable)" invisible="state != 'agreed'"
+                            groups="potting_management.group_potting_manager"/>
+                    <button name="action_draft" type="object" string="Remettre en brouillon"
+                            invisible="state not in ('submitted', 'rejected', 'cancelled')"/>
+                    <button name="action_cancel" type="object" string="Annuler"
+                            invisible="state in ('settled', 'cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,submitted,agreed,settled"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <field name="company_id" invisible="1"/>
+                    <group>
+                        <group>
+                            <field name="delivery_note_id" readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="transit_order_id"/>
+                            <field name="customer_id"/>
+                            <field name="invoice_id" options="{'no_create': True}"
+                                   readonly="state in ('settled', 'cancelled')"/>
+                            <field name="claim_date"/>
+                        </group>
+                        <group>
+                            <field name="currency_id" readonly="state != 'draft'"/>
+                            <field name="claimed_amount" class="fw-bold"/>
+                            <field name="agreed_amount"
+                                   readonly="state not in ('submitted',)"/>
+                            <field name="settlement_mode" readonly="1" invisible="not settlement_mode"/>
+                            <field name="credit_note_id" invisible="not credit_note_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Poids">
+                            <field name="shipped_net_kg" readonly="state != 'draft'"/>
+                            <field name="landed_net_kg" readonly="state != 'draft'"/>
+                            <field name="landed_weight_ref" readonly="state != 'draft'"/>
+                            <field name="franchise_pct" readonly="state != 'draft'"/>
+                            <field name="weight_loss_kg"/>
+                            <field name="franchise_kg"/>
+                            <field name="claimable_kg"/>
+                            <field name="unit_price_kg" readonly="state != 'draft'"/>
+                            <field name="weight_claim_amount"/>
+                        </group>
+                        <group string="Qualité">
+                            <field name="quality_claim_amount" readonly="state != 'draft'"/>
+                            <field name="survey_ref" readonly="state != 'draft'"/>
+                            <field name="quality_reason" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Pièces" name="attachments">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Comptabilité" name="accounting">
+                            <group>
+                                <field name="accounting_ref"/>
+                                <field name="accounting_date"/>
+                            </group>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="cocoa_bean_export_claim_view_search" model="ir.ui.view">
+        <field name="name">cocoa.bean.export.claim.search</field>
+        <field name="model">cocoa.bean.export.claim</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="delivery_note_id"/>
+                <field name="customer_id"/>
+                <filter name="open" string="En cours"
+                        domain="[('state', 'in', ('draft', 'submitted', 'agreed'))]"/>
+                <filter name="to_settle" string="À régler" domain="[('state', '=', 'agreed')]"/>
+                <filter name="settled" string="Réglées" domain="[('state', '=', 'settled')]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter name="group_customer" string="Acheteur" context="{'group_by': 'customer_id'}"/>
+                    <filter name="group_state" string="État" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_cocoa_bean_export_claim" model="ir.actions.act_window">
+        <field name="name">Réclamations à l'arrivée</field>
+        <field name="res_model">cocoa.bean.export.claim</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Enregistrer une réclamation</p>
+            <p>Poids débarqué inférieur au poids embarqué au-delà de la franchise, ou
+               réfaction pour qualité : le montant accordé se règle par un avoir.</p>
+        </field>
+    </record>
+
+    <record id="potting_delivery_note_view_form_bean_claims" model="ir.ui.view">
+        <field name="name">potting.delivery.note.form.bean.claims</field>
+        <field name="model">potting.delivery.note</field>
+        <field name="inherit_id" ref="potting_management.potting_delivery_note_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_bean_claims" type="object" class="oe_stat_button"
+                        icon="fa-balance-scale" invisible="product_type != 'cocoa_beans'">
+                    <field name="bean_claim_count" widget="statinfo" string="Réclamations"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>
