@@ -151,10 +151,27 @@ class CocoaBeanExportClaim(models.Model):
             if invoice:
                 claim.invoice_id = invoice
                 claim.currency_id = invoice.currency_id
-                if invoice.invoiced_tonnage:
-                    claim.unit_price_kg = float_round(
-                        invoice.amount_total / (invoice.invoiced_tonnage * 1000.0),
-                        precision_digits=4)
+                price = claim._goods_unit_price_kg(invoice)
+                if price:
+                    claim.unit_price_kg = price
+
+    # Lignes qui font la valeur de la MARCHANDISE perdue : le produit et ses
+    # primes. La freinte (Weight Loss) déjà déduite et les frais divers n'en
+    # sont pas : les diviser par le tonnage, comme le faisait amount_total,
+    # faussait le prix au kg de la réclamation.
+    _GOODS_LINE_TYPES = ('product', 'premium', 'support_premium')
+
+    @api.model
+    def _goods_unit_price_kg(self, invoice):
+        """Valeur au kg des fèves facturées : (produit + primes) ÷ kg produit."""
+        lines = invoice.line_ids.filtered(lambda l: l.line_type in self._GOODS_LINE_TYPES)
+        kg = sum(lines.filtered(lambda l: l.line_type == 'product').mapped('quantity')) * 1000.0
+        if lines and kg:
+            return float_round(sum(lines.mapped('subtotal')) / kg, precision_digits=4)
+        if invoice.invoiced_tonnage:
+            return float_round(invoice.amount_untaxed / (invoice.invoiced_tonnage * 1000.0),
+                               precision_digits=4)
+        return 0.0
 
     @api.constrains('landed_net_kg', 'shipped_net_kg', 'franchise_pct', 'agreed_amount',
                     'quality_claim_amount', 'unit_price_kg')

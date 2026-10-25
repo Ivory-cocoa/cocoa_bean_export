@@ -28,14 +28,23 @@ class PottingFormuleBeans(models.Model):
         if self.product_type == PRODUCT_TYPE:
             self.coefficient_conversion = 1.0
 
+    # Le socle calcule l'équivalent fèves (tonnage × 1000 × coefficient) à la
+    # création comme à toute écriture du tonnage ou du coefficient : forcer le
+    # coefficient à 1 suffit.
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get('product_type') == PRODUCT_TYPE:
                 vals['coefficient_conversion'] = 1.0
-                if vals.get('tonnage') and not vals.get('tonnage_converti'):
-                    vals['tonnage_converti'] = vals['tonnage'] * 1000
         return super().create(vals_list)
+
+    def write(self, vals):
+        # Le type de produit arrive souvent APRÈS la création (synchronisation
+        # depuis l'OT) : la formule gardait alors le coefficient 1,25 par
+        # défaut et la contrainte la refusait au lieu de la corriger.
+        if vals.get('product_type') == PRODUCT_TYPE and 'coefficient_conversion' not in vals:
+            vals = dict(vals, coefficient_conversion=1.0)
+        return super().write(vals)
 
     @api.constrains('product_type', 'coefficient_conversion')
     def _check_bean_coefficient(self):

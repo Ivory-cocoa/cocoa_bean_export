@@ -20,7 +20,7 @@ from datetime import date, timedelta
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import Form, TransactionCase, tagged
 
-from odoo.addons.potting_management.tests.common import get_xof, make_campaign
+from odoo.addons.potting_management.tests.common import get_trimestre, get_xof, make_campaign
 from odoo.addons.potting_management.tests.common_d6 import set_ot_d6
 
 # Sélections qui ne décrivent PAS un produit exporté (usine, marché local,
@@ -218,6 +218,46 @@ class TestBeanProductType(BeanExportCase):
         Formule = self.env['potting.formule']
         self.assertEqual(Formule._get_bean_coefficient('cocoa_beans'), 1.0)
         self.assertEqual(self.env['potting.lot']._mb_factor('cocoa_beans'), 1.0)
+
+    def test_06b_bean_type_set_after_creation_forces_coefficient_one(self):
+        """Le type passe à « fèves » après coup : coefficient ramené à 1.
+
+        Cas réel : formule saisie en semi-fini puis rattachée à un OT de fèves,
+        dont `_sync_ot_fields` recopie le type. Avant, la formule gardait son
+        coefficient de 1,25 et la contrainte la refusait ; l'équivalent fèves
+        (assiette des taxes et de l'apurement) suit désormais le coefficient.
+        """
+        self.ICP.set_param('cocoa_bean_export.with_semi_finished', 'True')
+        cv = self.env['potting.confirmation.vente'].create({
+            'reference_ccc': 'CV-FEV-COEF',
+            'grade_qualite': 'GF',
+            'taux_soutien_reversement': 0.0,
+            'campaign_id': self.campaign.id,
+            'trimestre_campaign_id': get_trimestre(self.campaign).id,
+            'date_emission': date.today() - timedelta(days=10),
+            'date_start': date.today() - timedelta(days=10),
+            'date_end': date.today() + timedelta(days=80),
+            'tonnage_autorise': 500.0,
+            'prix_tonnage': 1500000,
+            'product_type': 'all',
+            'state': 'active',
+        })
+        formule = self.env['potting.formule'].create({
+            'reference_ccc': 'FO1/FEV/COEF',
+            'confirmation_vente_id': cv.id,
+            'campaign_id': self.campaign.id,
+            'prix_kg': 1500,
+            'prix_tonnage': 1500000,
+            'prix_reference': 1500,
+            'tonnage': 20.0,
+            'product_type': 'cocoa_butter',
+            'coefficient_conversion': 1.25,
+        })
+        self.assertEqual(formule.tonnage_converti, 25000.0)
+        formule.write({'product_type': 'cocoa_beans'})
+        self.assertEqual(formule.coefficient_conversion, 1.0)
+        self.assertEqual(formule.tonnage_converti, 20000.0)
+        self.assertAlmostEqual(cv.tonnage_utilise, 20.0, places=3)
 
     def test_07_dashboard_shows_beans_card_only(self):
         scope = self.env['potting.dashboard.scope'].build(
@@ -741,6 +781,29 @@ class TestBeanArrivalClaim(BeanExportCase):
         self.assertEqual(claim.state, 'settled')
         self.assertTrue(claim.credit_note_id)
         self.assertAlmostEqual(claim.credit_note_id.amount_total, claim.agreed_amount, places=0)
+
+    def test_80b_unit_price_is_the_goods_value_per_kg(self):
+        """Prix au kg = (produit + primes) ÷ kg produit, hors frais divers.
+
+        L'ancien calcul divisait amount_total par le tonnage : des frais
+        facturés en ligne « Autre » gonflaient le prix des fèves perdues.
+        """
+        bl, invoice = self._invoiced_bl('REC-80B')
+        invoice.write({'state': 'draft'})
+        invoice.write({'line_ids': [
+            (0, 0, {'name': 'Prime RA', 'line_type': 'premium',
+                    'quantity': 26.0, 'price_unit': 100000.0}),
+            (0, 0, {'name': 'Frais de dossier', 'line_type': 'other',
+                    'quantity': 1.0, 'price_unit': 300000.0}),
+        ]})
+        invoice.write({'state': 'confirmed'})
+        claim = self.env['cocoa.bean.export.claim'].create({
+            'delivery_note_id': bl.id, 'landed_net_kg': 25800.0})
+        # (26 × 2 500 000 + 26 × 100 000) / 26 000 kg = 2 600 F/kg
+        self.assertAlmostEqual(claim.unit_price_kg, 2600.0, places=4)
+        self.assertNotAlmostEqual(claim.unit_price_kg,
+                                  invoice.amount_total / 26000.0, places=2)
+        self.assertEqual(claim.weight_claim_amount, 70.0 * 2600.0)
 
     def test_81_loss_within_franchise_claims_nothing(self):
         bl, _invoice = self._invoiced_bl('REC-81')
