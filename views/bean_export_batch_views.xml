@@ -22,6 +22,10 @@
                 <field name="net_weight_kg" sum="Net (kg)"/>
                 <field name="remaining_bags" sum="Sacs disponibles" optional="show"/>
                 <field name="remaining_net_kg" sum="Net disponible (kg)"/>
+                <field name="eudr_state" widget="badge" optional="show"
+                       decoration-success="eudr_state == 'eligible'"
+                       decoration-warning="eudr_state == 'pending'"
+                       decoration-danger="eudr_state in ('blocked', 'not_traced')"/>
                 <field name="allocation_status" widget="badge"
                        decoration-success="allocation_status == 'full'"
                        decoration-warning="allocation_status == 'partial'"/>
@@ -135,6 +139,37 @@
                             <button name="action_evaluate_quality" type="object"
                                     string="Réévaluer" class="btn-link"
                                     help="Après une modification de la norme ou de la grille des grades."/>
+                        </page>
+                        <page string="EUDR" name="eudr">
+                            <group>
+                                <group string="Traçabilité">
+                                    <field name="eudr_state" widget="badge"
+                                           decoration-success="eudr_state == 'eligible'"
+                                           decoration-warning="eudr_state == 'pending'"
+                                           decoration-danger="eudr_state in ('blocked', 'not_traced')"/>
+                                    <field name="eudr_reason" invisible="not eudr_reason"/>
+                                    <field name="source_bean_lot_ids" widget="many2many_tags"
+                                           options="{'no_create': True}"/>
+                                </group>
+                                <group string="Géolocalisation fournie"
+                                       invisible="source_bean_lot_ids">
+                                    <field name="eudr_geojson" filename="eudr_geojson_name"/>
+                                    <field name="eudr_geojson_name" invisible="1"/>
+                                    <field name="eudr_feature_count"/>
+                                    <field name="eudr_supplier_reference"/>
+                                    <field name="eudr_verified"/>
+                                    <field name="eudr_verified_by_id" invisible="not eudr_verified"/>
+                                    <field name="eudr_verified_date" invisible="not eudr_verified"/>
+                                    <button name="action_eudr_verify" type="object"
+                                            string="Marquer comme vérifiée" class="btn-secondary"
+                                            invisible="not eudr_geojson or eudr_verified"
+                                            groups="potting_management.group_potting_manager"/>
+                                    <button name="action_eudr_unverify" type="object"
+                                            string="Retirer la vérification" class="btn-link"
+                                            invisible="not eudr_verified"
+                                            groups="potting_management.group_potting_manager"/>
+                                </group>
+                            </group>
                         </page>
                         <page string="Notes" name="notes">
                             <field name="note" placeholder="Observations (pesée, qualité, transport…)"/>

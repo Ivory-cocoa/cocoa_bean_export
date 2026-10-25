@@ -14,12 +14,13 @@ Ce que ces tests verrouillent :
   * la formule FO1 de fèves a un coefficient de conversion de 1.
 """
 
+import base64
 from datetime import date, timedelta
 
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import Form, TransactionCase, tagged
 
-from odoo.addons.potting_management.tests.common import make_campaign
+from odoo.addons.potting_management.tests.common import get_xof, make_campaign
 
 # Sélections qui ne décrivent PAS un produit exporté (usine, marché local,
 # déblocage de fèves pour la transformation) : volontairement sans fèves.
@@ -449,3 +450,238 @@ class TestBeanBatchQuality(BeanExportCase):
         batch = self._quality_batch('DS-Q4', moisture_pct=7.5, mouldy_pct=7.0)
         wizard = self._constitute(self.lot1, [(batch, 10)])
         self.assertFalse(wizard.quality_issues)
+
+
+GEOJSON_OK = (
+    '{"type": "FeatureCollection", "features": ['
+    '{"type": "Feature", "properties": {"ProducerName": "Planteur A"},'
+    ' "geometry": {"type": "Polygon", "coordinates": [[[-6.5, 5.8], [-6.49, 5.8],'
+    ' [-6.49, 5.81], [-6.5, 5.8]]]}},'
+    '{"type": "Feature", "properties": {"ProducerName": "Planteur B"},'
+    ' "geometry": {"type": "Point", "coordinates": [-6.2, 6.1]}}]}')
+
+
+@tagged('cocoa_bean_export', 'post_install', '-at_install')
+class TestBeanShipmentDocuments(BeanExportCase):
+    """Documents d'export du BL et EUDR des fèves."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.phyto = cls.env.ref('cocoa_bean_export.doc_type_phyto')
+        cls.fumigation = cls.env.ref('cocoa_bean_export.doc_type_fumigation')
+
+    def _shipped_bl(self, ticket, cert=None, geojson=None):
+        from odoo.addons.potting_management.tests.common_d6 import set_ot_d6
+        batch = self._batch(bags=400, gross=26400.0, tare=400.0, ticket=ticket,
+                            cert=cert, confirm=False)
+        if geojson:
+            batch.eudr_geojson = base64.b64encode(geojson.encode())
+        batch.action_confirm()
+        ot = self.env['potting.transit.order'].create({
+            'customer_id': self.customer.id, 'consignee_id': self.consignee.id,
+            'campaign_id': self.campaign.id, 'product_type': 'cocoa_beans',
+            'tonnage': 26.0})
+        lot = self.env['potting.lot'].create({
+            'name': 'DOC-%s' % ticket, 'base_name': 'DOC-%s' % ticket,
+            'transit_order_id': ot.id, 'product_type': 'cocoa_beans',
+            'target_tonnage': 26.0,
+            'certification_id': cert.id if cert else False})
+        self._constitute(lot, [(batch, 400)], complete=True)
+        container = self.env['potting.container'].create({
+            'name': 'CONT-%s' % ticket, 'container_type': '20'})
+        lot.write({'container_id': container.id})
+        lot.with_context(bypass_potted_lock=True).sudo().write({'state': 'potted'})
+        contract = self.env['potting.customer.order'].create({
+            'customer_id': self.customer.id, 'product_type': 'cocoa_beans',
+            'date_order': date.today(), 'contract_number': 'CTR-%s' % ticket,
+            'contract_tonnage': 1000.0, 'unit_price': 2500000})
+        self.env['potting.ot.contract.allocation'].create({
+            'transit_order_id': ot.id, 'customer_order_id': contract.id,
+            'tonnage_alloue': ot.tonnage})
+        bl = self.env['potting.delivery.note'].create({
+            'transit_order_id': ot.id,
+            'lot_ids': [(6, 0, lot.ids)],
+            'bl_external_number': 'BLX-%s' % ticket,
+            'shipped_weight': 26.0,
+            'number_of_bags': 400,
+        })
+        set_ot_d6(self.env, ot, 1.0, reference='D6-%s' % ticket)
+        return bl, batch, lot
+
+    def _fill(self, bl, doc_type, days_ago=0, attach=True):
+        doc = bl.bean_document_ids.filtered(lambda d: d.type_id == doc_type)
+        vals = {'number': '%s-001' % doc_type.code,
+                'date': date.today() - timedelta(days=days_ago)}
+        if attach:
+            vals['attachment_ids'] = [(0, 0, {
+                'name': '%s.pdf' % doc_type.code,
+                'datas': base64.b64encode(b'%PDF-1.4 test')})]
+        doc.write(vals)
+        return doc
+
+    def test_50_bl_receives_applicable_document_lines(self):
+        bl, _batch, _lot = self._shipped_bl('DOC-50')
+        types = bl.bean_document_ids.mapped('type_id')
+        self.assertIn(self.phyto, types)
+        self.assertNotIn(self.env.ref('cocoa_bean_export.doc_type_transaction'), types,
+                         "Certificat de transaction : lots certifiés seulement")
+        self.assertTrue(all(d.status == 'missing' for d in bl.bean_document_ids))
+
+    def test_51_bl_confirmation_requires_bl_documents(self):
+        self.phyto.requirement = 'bl'
+        bl, _batch, _lot = self._shipped_bl('DOC-51')
+        with self.assertRaises(UserError):
+            bl.action_confirm()
+        doc = self._fill(bl, self.phyto, attach=False)
+        self.assertEqual(doc.status, 'incomplete', "Pièce jointe exigée")
+        with self.assertRaises(UserError):
+            bl.action_confirm()
+        self._fill(bl, self.phyto)
+        self.assertEqual(doc.status, 'ok')
+        bl.action_confirm()
+        self.assertEqual(bl.state, 'confirmed')
+
+    def test_52_validity_before_shipment(self):
+        self.fumigation.write({'requirement': 'bl', 'validity_days': 10})
+        bl, _batch, _lot = self._shipped_bl('DOC-52')
+        bl.date_shipment = date.today()
+        doc = self._fill(bl, self.fumigation, days_ago=20)
+        self.assertEqual(doc.status, 'expired')
+        with self.assertRaises(UserError):
+            bl.action_confirm()
+        self._fill(bl, self.fumigation, days_ago=3)
+        self.assertEqual(doc.status, 'ok')
+
+    def test_53_invoice_confirmation_requires_invoice_documents(self):
+        bl, _batch, lot = self._shipped_bl('DOC-53')
+        bl.action_confirm()
+        invoice = self.env['potting.customer.invoice'].create({
+            'partner_id': self.customer.id,
+            'transit_order_id': bl.transit_order_id.id,
+            'delivery_note_id': bl.id,
+            'invoiced_tonnage': 26.0,
+            'currency_id': get_xof(self.env).id,
+        })
+        with self.assertRaises(UserError):
+            invoice.write({'state': 'confirmed'})
+        for doc_type in bl.bean_document_ids.mapped('type_id').filtered(
+                lambda t: t.requirement != 'optional'):
+            self._fill(bl, doc_type)
+        self.assertTrue(bl.bean_documents_complete)
+        invoice.write({'state': 'confirmed'})
+        self.assertEqual(invoice.state, 'confirmed')
+
+    def test_60_eudr_from_supplied_geojson(self):
+        bl, batch, lot = self._shipped_bl('EUDR-60', geojson=GEOJSON_OK)
+        self.assertEqual(batch.eudr_feature_count, 2)
+        self.assertEqual(batch.eudr_state, 'pending')
+        self.assertEqual(lot.eudr_state, 'pending')
+        with self.assertRaises(UserError):
+            bl.action_generate_eudr_dossier()
+        batch.action_eudr_verify()
+        self.assertEqual(batch.eudr_state, 'eligible')
+        lot.invalidate_recordset(['eudr_state'])
+        bl.invalidate_recordset(['eudr_state'])
+        self.assertEqual(lot.eudr_state, 'eligible')
+        self.assertEqual(bl.eudr_state, 'eligible')
+        collection, _beans, _plots = bl._eudr_feature_collection()
+        self.assertEqual(len(collection['features']), 2)
+        bl.action_generate_eudr_dossier()
+        self.assertEqual(bl.eudr_plot_count, 2)
+
+    def test_61_new_geojson_needs_new_verification(self):
+        batch = self._batch(bags=10, gross=660.0, tare=10.0, ticket='EUDR-61', confirm=False)
+        batch.eudr_geojson = base64.b64encode(GEOJSON_OK.encode())
+        batch.action_eudr_verify()
+        self.assertTrue(batch.eudr_verified)
+        batch.eudr_geojson = base64.b64encode(GEOJSON_OK.replace('Planteur B', 'C').encode())
+        self.assertFalse(batch.eudr_verified)
+        self.assertEqual(batch.eudr_state, 'pending')
+
+    def test_62_invalid_geojson_refused(self):
+        batch = self._batch(bags=10, gross=660.0, tare=10.0, ticket='EUDR-62', confirm=False)
+        for bad in ('pas du json',
+                    '{"type": "FeatureCollection", "features": []}',
+                    # latitude / longitude inversées : hors Côte d'Ivoire
+                    GEOJSON_OK.replace('[-6.2, 6.1]', '[6.1, -6.2]'),
+                    # polygone non fermé
+                    GEOJSON_OK.replace('[-6.49, 5.81], [-6.5, 5.8]]', '[-6.49, 5.81], [-6.48, 5.8]]')):
+            with self.assertRaises(ValidationError, msg=bad[:30]):
+                batch.eudr_geojson = base64.b64encode(bad.encode())
+                batch.flush_recordset()
+        self.assertEqual(batch.eudr_state, 'not_traced')
+
+
+@tagged('cocoa_bean_export', 'post_install', '-at_install')
+class TestBeanBatchImport(BeanExportCase):
+
+    def _xlsx(self, rows):
+        import io
+        import openpyxl
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        for row in rows:
+            sheet.append(row)
+        buffer = io.BytesIO()
+        workbook.save(buffer)
+        return base64.b64encode(buffer.getvalue())
+
+    def test_70_import_with_aliases_and_errors(self):
+        data = self._xlsx([
+            # Ordre libre, alias, accents et casse indifférents
+            ['Date', 'Lots', 'SITE', 'Bulletin', 'Nombre de sacs', 'Brut', 'Tare',
+             'Certif', 'Grade', 'Humidité'],
+            ['24/10/2026', '5011', 'Site usinage test', 'DS-IMP-1', 400, '26 400,5', 400.5,
+             'rt', 'Grade 1', '7,2'],
+            ['24/10/2026', '5012', 'Site inconnu', 'DS-IMP-2', 10, 660, 10, None, None, None],
+            ['24/10/2026', '5011', 'Site usinage test', 'DS-IMP-1', 400, 26400, 400,
+             None, None, None],
+            ['25/10/2026', '5013', 'Site usinage test', 'DS-IMP-3', 10, 600, 700,
+             None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+        ])
+        wizard = self.env['cocoa.bean.export.batch.import.wizard'].create({
+            'file_data': data, 'file_name': 'historique.xlsx', 'confirm_batches': True})
+        wizard.action_parse_file()
+        self.assertEqual(len(wizard.line_ids), 4, "Ligne vide ignorée")
+        by_row = {line.row_number: line for line in wizard.line_ids}
+        self.assertEqual(by_row[2].status, 'ok', by_row[2].errors)
+        self.assertIn('inconnu', by_row[3].errors)
+        self.assertIn('doublon', by_row[4].errors)
+        self.assertIn('tare', by_row[5].errors)
+        wizard.action_import()
+        batch = self.env['cocoa.bean.export.batch'].search([('weighing_ticket', '=', 'DS-IMP-1')])
+        self.assertEqual(len(batch), 1)
+        self.assertEqual(batch.state, 'confirmed')
+        self.assertEqual(batch.net_weight_kg, 26000.0)
+        self.assertEqual(batch.certification_id, self.cert_ra)
+        self.assertEqual(batch.grade, 'GF')
+        self.assertEqual(batch.moisture_pct, 7.2)
+        self.assertEqual(batch.date, date(2026, 10, 24))
+        self.assertEqual(wizard.state, 'done')
+
+    def test_71_missing_required_column_is_explained(self):
+        data = self._xlsx([['Lots', 'Site'], ['5011', 'Site usinage test']])
+        wizard = self.env['cocoa.bean.export.batch.import.wizard'].create({
+            'file_data': data, 'file_name': 'incomplet.xlsx'})
+        with self.assertRaises(UserError) as error:
+            wizard.action_parse_file()
+        self.assertIn('Poids brut', str(error.exception))
+
+    def test_72_create_missing_sites(self):
+        data = self._xlsx([['N° lot site', "Site d'usinage", 'Date', 'Poids brut (kg)'],
+                           ['9001', 'Nouveau site', '20/10/2026', 1000]])
+        wizard = self.env['cocoa.bean.export.batch.import.wizard'].create({
+            'file_data': data, 'file_name': 'sites.xlsx', 'create_missing_sites': True})
+        wizard.action_parse_file()
+        wizard.action_import()
+        batch = self.env['cocoa.bean.export.batch'].search([('site_lot_ref', '=', '9001')])
+        self.assertEqual(batch.site_id.name, 'Nouveau site')
+        self.assertEqual(batch.state, 'draft')
+
+    def test_73_template_downloads(self):
+        wizard = self.env['cocoa.bean.export.batch.import.wizard'].create({})
+        action = wizard.action_download_template()
+        self.assertTrue(wizard.template_file)
+        self.assertIn('download=true', action['url'])

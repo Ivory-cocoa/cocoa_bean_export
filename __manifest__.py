@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "Exportation des fèves de cacao",
-    'version': '17.0.1.0.0',
+    'version': '17.0.1.1.0',
     'category': 'Inventory/Logistics',
     'summary': "Export de fèves de cacao brutes sur le socle Gestion des Exportations",
     'description': """
@@ -23,7 +23,11 @@ Propre aux fèves :
 - Code SH 1801 00 00 00, coefficient de conversion fèves = 1 (assiette des
   taxes CCC), facteur Mass Balance = 1 ;
 - Mode « fèves uniquement » : les semi-finis disparaissent des listes de
-  choix, des tableaux de bord et des menus de production.
+  choix, des tableaux de bord et des menus de production ;
+- Qualité évaluée avec les normes et grilles de grades du module fèves ;
+- Documents d'export par BL (liste et exigences configurables) ;
+- EUDR : lots de fèves d'origine ou GeoJSON fourni, vérifié ;
+- Import Excel des lots d'usinage (en-têtes reconnus par alias).
 """,
     'author': 'ICP',
     'website': 'https://www.icp.com',
@@ -38,12 +42,15 @@ Propre aux fèves :
         'data/ir_sequence_data.xml',
         'data/product_data.xml',
         'data/ir_config_parameter_data.xml',
+        'data/bean_export_document_type_data.xml',
         'wizards/bean_lot_constitution_wizard_views.xml',
+        'wizards/bean_export_batch_import_wizard_views.xml',
         'views/bean_export_batch_views.xml',
         'views/potting_lot_views.xml',
         'views/res_partner_views.xml',
         'views/res_config_settings_views.xml',
         'views/bean_quality_config_views.xml',
+        'views/bean_export_document_views.xml',
         'views/menu_views.xml',
     ],
     'installable': True,

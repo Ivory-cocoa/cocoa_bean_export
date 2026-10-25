@@ -43,6 +43,44 @@ Qualité des fèves :
 - **Grilles des grades** (par campagne fèves) → Grade 1 / Grade 2 /
   sous-grade, comparé au grade de la CV de l'OT.
 
+## Documents d'export (BL)
+
+Chaque BL de fèves reçoit une ligne par type de document actif
+(Configuration ▸ Documents d'export des fèves). Valeurs de départ, à ajuster :
+
+| Document | Exigence | Pièce jointe |
+|---|---|---|
+| Certificat phytosanitaire | à la confirmation de la facture | oui |
+| Certificat de fumigation | à la confirmation de la facture | oui |
+| Certificat d'origine | à la confirmation de la facture | oui |
+| Certificat de qualité (CCC) | à la confirmation de la facture | oui |
+| Certificat de poids | facultatif | non |
+| Certificat de transaction | facultatif, lots certifiés seulement | non |
+
+Un type peut aussi être limité aux destinations UE et porter une **validité**
+(jours avant l'embarquement, ex. fumigation). Le contrôle porte sur
+l'écriture de l'état (BL confirmé, facture confirmée) : confirmation
+unitaire ou groupée, même porte.
+
+## EUDR
+
+Par lot d'usinage, deux sources : les **lots de fèves d'origine** suivis dans
+Odoo (éligibilité du module fèves), ou un **GeoJSON fourni** par le site ou
+les coopératives, contrôlé à l'import (FeatureCollection, Point / Polygon /
+MultiPolygon, coordonnées [longitude, latitude] en Côte d'Ivoire, polygones
+fermés) puis **vérifié par un Manager**. Le lot export et le BL en héritent ;
+le dossier EUDR du BL (socle) inclut les parcelles fournies.
+
+## Import de l'historique
+
+Production ▸ Importer des lots d'usinage : classeur .xlsx dont les colonnes
+sont reconnues par leur en-tête (alias, ordre libre ; obligatoires : n° de
+lot du site, site, date, poids brut). « Analyser » contrôle sans rien créer
+(site, certification, poids, doublons dans le fichier et en base) ;
+« Importer » crée les lignes valides, en brouillon ou confirmées. Modèle
+téléchargeable. Les contrats, CV, formules et OT s'importent avec les
+assistants du socle (« Fèves » reconnu).
+
 ## Tests
 
 `--test-tags /cocoa_bean_export`. Les tests de `potting_management` se

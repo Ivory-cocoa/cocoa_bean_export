@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cocoa_bean_export_batch_import_wizard_view_form" model="ir.ui.view">
+        <field name="name">cocoa.bean.export.batch.import.wizard.form</field>
+        <field name="model">cocoa.bean.export.batch.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importer des lots d'usinage">
+                <field name="state" invisible="1"/>
+                <div invisible="state != 'upload'">
+                    <div class="alert alert-info" role="status">
+                        Les colonnes sont reconnues par leur en-tête, dans n'importe quel
+                        ordre (« N° lot site », « Site d'usinage », « Date », « Poids brut
+                        (kg) » sont obligatoires). Téléchargez le modèle pour la liste
+                        complète.
+                    </div>
+                    <group>
+                        <field name="file_data" filename="file_name"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="create_missing_sites"/>
+                        <field name="confirm_batches"/>
+                    </group>
+                </div>
+                <div invisible="state != 'preview'">
+                    <div class="alert alert-warning" role="alert" invisible="not error_count">
+                        <field name="error_count" readonly="1" class="d-inline"/> ligne(s) en
+                        erreur ne seront pas importées.
+                    </div>
+                    <p><field name="valid_count" readonly="1" class="d-inline fw-bold"/> ligne(s) valide(s).</p>
+                    <field name="line_ids" readonly="1">
+                        <tree decoration-danger="status == 'error'" decoration-success="status == 'ok'">
+                            <field name="row_number"/>
+                            <field name="site_name"/>
+                            <field name="site_lot_ref"/>
+                            <field name="weighing_ticket"/>
+                            <field name="bag_count"/>
+                            <field name="net_weight_kg" sum="Net (kg)"/>
+                            <field name="status" widget="badge"
+                                   decoration-danger="status == 'error'"
+                                   decoration-success="status == 'ok'"/>
+                            <field name="errors"/>
+                        </tree>
+                    </field>
+                </div>
+                <div invisible="state != 'done'">
+                    <field name="result" readonly="1"/>
+                </div>
+                <footer>
+                    <button name="action_parse_file" type="object" string="Analyser"
+                            class="btn-primary" invisible="state != 'upload'"/>
+                    <button name="action_download_template" type="object"
+                            string="Télécharger le modèle" class="btn-secondary"
+                            invisible="state != 'upload'"/>
+                    <button name="action_import" type="object" string="Importer les lignes valides"
+                            class="btn-primary" invisible="state != 'preview' or not valid_count"/>
+                    <button string="Fermer" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cocoa_bean_export_batch_import" model="ir.actions.act_window">
+        <field name="name">Importer des lots d'usinage</field>
+        <field name="res_model">cocoa.bean.export.batch.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

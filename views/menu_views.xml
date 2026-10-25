@@ -8,6 +8,13 @@
               sequence="5"
               groups="potting_management.group_potting_shipping,potting_management.group_potting_production,potting_management.group_potting_container_manager"/>
 
+    <menuitem id="menu_cocoa_bean_export_batch_import"
+              name="Importer des lots d'usinage"
+              parent="potting_management.menu_potting_production"
+              action="action_cocoa_bean_export_batch_import"
+              sequence="6"
+              groups="potting_management.group_potting_shipping,potting_management.group_potting_manager"/>
+
     <!-- Référentiels qualité du module fèves (normes, grilles de grades),
          modifiables par le Manager Export -->
     <menuitem id="menu_bean_export_quality_config"
@@ -26,5 +33,12 @@
               parent="menu_bean_export_quality_config"
               action="action_bean_export_grade_grid"
               sequence="20"
+              groups="potting_management.group_potting_manager"/>
+
+    <menuitem id="menu_bean_export_document_type"
+              name="Documents d'export des fèves"
+              parent="potting_management.menu_potting_config"
+              action="action_cocoa_bean_export_document_type"
+              sequence="46"
               groups="potting_management.group_potting_manager"/>
 </odoo>

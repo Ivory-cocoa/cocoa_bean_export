@@ -5,4 +5,14 @@
         <field name="model_id" ref="model_cocoa_bean_export_batch"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
+    <record id="rule_bean_export_document_company" model="ir.rule">
+        <field name="name">Documents d'export : sociétés autorisées</field>
+        <field name="model_id" ref="model_cocoa_bean_export_document"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_bean_export_document_type_company" model="ir.rule">
+        <field name="name">Types de document d'export : sociétés autorisées</field>
+        <field name="model_id" ref="model_cocoa_bean_export_document_type"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
 </odoo>
