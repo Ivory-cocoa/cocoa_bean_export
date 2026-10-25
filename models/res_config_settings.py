@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """Paramètres ▸ Export fèves."""
 
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 from .product_spec import (DEFAULT_BAG_WEIGHT_KG, PARAM_BAG_WEIGHT,
                            PARAM_PACKAGING, PARAM_WITH_SEMI_FINISHED)
+
+_logger = logging.getLogger(__name__)
 
 
 class ResConfigSettingsBeans(models.TransientModel):
@@ -120,3 +124,15 @@ class ResConfigSettingsBeans(models.TransientModel):
     def set_values(self):
         super().set_values()
         self._bean_export_sync_menus()
+
+    def _register_hook(self):
+        """Chaque chargement de <menuitem> remet le menu ACTIF (convert.py) :
+        une mise à jour de potting_management seule réafficherait les menus
+        d'usine. Le registre se recharge après toute mise à jour : on y
+        réaligne l'interface sur le réglage."""
+        super()._register_hook()
+        try:
+            with self.env.cr.savepoint():
+                self._bean_export_sync_menus()
+        except Exception as exc:  # installation en cours, accès concurrent…
+            _logger.warning("Export fèves : menus non resynchronisés (%s)", exc)

@@ -208,6 +208,11 @@ class TestBeanProductType(BeanExportCase):
         self.ICP.set_param('cocoa_bean_export.with_semi_finished', 'False')
         Settings._bean_export_sync_menus()
         self.assertNotIn(admin, group.users)
+        # Une mise à jour de potting recharge ses menus et les réactive :
+        # le rechargement du registre les masque de nouveau.
+        menu.active = True
+        Settings._register_hook()
+        self.assertFalse(menu.active)
 
     def test_06_formule_coefficient_is_one(self):
         Formule = self.env['potting.formule']
