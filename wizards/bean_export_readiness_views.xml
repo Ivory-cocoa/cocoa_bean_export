@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cocoa_bean_export_readiness_view_form" model="ir.ui.view">
+        <field name="name">cocoa.bean.export.readiness.form</field>
+        <field name="model">cocoa.bean.export.readiness</field>
+        <field name="arch" type="xml">
+            <form string="Mise en service" create="false">
+                <header>
+                    <button name="action_refresh" type="object" string="Relancer les contrôles"
+                            class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1>Mise en service — export des fèves</h1></div>
+                    <div class="alert alert-danger" role="alert" invisible="not error_count">
+                        <field name="error_count" readonly="1" class="d-inline"/> point(s)
+                        bloquant(s) : à corriger avant le premier export.
+                    </div>
+                    <div class="alert alert-warning" role="status"
+                         invisible="error_count or not warning_count">
+                        Aucun point bloquant ; <field name="warning_count" readonly="1" class="d-inline"/>
+                        point(s) à compléter.
+                    </div>
+                    <div class="alert alert-success" role="status"
+                         invisible="error_count or warning_count">
+                        La base est prête pour l'export des fèves.
+                    </div>
+                    <field name="line_ids" readonly="1">
+                        <tree decoration-danger="status == 'error'"
+                              decoration-warning="status == 'warning'"
+                              decoration-success="status == 'ok'">
+                            <field name="section"/>
+                            <field name="name"/>
+                            <field name="status" widget="badge"
+                                   decoration-danger="status == 'error'"
+                                   decoration-warning="status == 'warning'"
+                                   decoration-success="status == 'ok'"/>
+                            <field name="detail"/>
+                            <button name="action_fix" type="object" string="Ouvrir"
+                                    icon="fa-external-link" class="btn-link"/>
+                        </tree>
+                    </field>
+                    <div class="text-muted">Contrôlé le <field name="checked_at" readonly="1" class="d-inline"/></div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cocoa_bean_export_readiness" model="ir.actions.server">
+        <field name="name">Mise en service — export des fèves</field>
+        <field name="model_id" ref="model_cocoa_bean_export_readiness"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open()</field>
+    </record>
+</odoo>

@@ -45,6 +45,7 @@ Propre aux fèves :
         'data/bean_export_document_type_data.xml',
         'wizards/bean_lot_constitution_wizard_views.xml',
         'wizards/bean_export_batch_import_wizard_views.xml',
+        'wizards/bean_export_readiness_views.xml',
         'views/bean_export_batch_views.xml',
         'views/potting_lot_views.xml',
         'views/res_partner_views.xml',

@@ -35,3 +35,5 @@ access_bean_claim_bl,bean.export.claim bl,model_cocoa_bean_export_claim,potting_
 access_bean_claim_accountant,bean.export.claim accountant,model_cocoa_bean_export_claim,potting_management.group_potting_accountant,1,1,0,0
 access_bean_claim_commercial,bean.export.claim commercial,model_cocoa_bean_export_claim,potting_management.group_potting_commercial,1,0,0,0
 access_bean_claim_pdg,bean.export.claim pdg,model_cocoa_bean_export_claim,potting_management.group_potting_pdg,1,0,0,0
+access_bean_readiness_manager,bean.export.readiness manager,model_cocoa_bean_export_readiness,potting_management.group_potting_manager,1,1,1,1
+access_bean_readiness_line_manager,bean.export.readiness.line manager,model_cocoa_bean_export_readiness_line,potting_management.group_potting_manager,1,1,1,1

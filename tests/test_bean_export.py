@@ -785,3 +785,31 @@ class TestBeanExportGuide(TransactionCase):
                 self.assertTrue(chapter['template'], "%s/%s" % (lang, chapter['key']))
                 self.env['ir.qweb']._render(chapter['template'], values)
             self.assertFalse(values['g'].missing, values['g'].missing)
+
+
+@tagged('cocoa_bean_export', 'post_install', '-at_install')
+class TestBeanExportReadiness(TransactionCase):
+
+    def test_95_readiness_reflects_configuration(self):
+        Readiness = self.env['cocoa.bean.export.readiness']
+        action = Readiness.action_open()
+        wizard = Readiness.browse(action['res_id'])
+        lines = {line.key: line for line in wizard.line_ids}
+        self.assertEqual(set(lines), {key for key, *_rest in Readiness._CHECKS})
+        # Chaque bouton « Ouvrir » mène à une action existante
+        for line in wizard.line_ids:
+            self.assertTrue(line.action_fix().get('type'), line.key)
+        self.assertNotIn('Contrôle impossible', ' '.join(wizard.line_ids.mapped('detail')))
+        # Un contrôle suit la configuration réelle
+        self.env['cocoa.reception.site'].search([]).write({'active': False})
+        wizard.action_refresh()
+        site_line = wizard.line_ids.filtered(lambda l: l.key == 'sites')
+        self.assertEqual(site_line.status, 'error')
+        self.env['cocoa.reception.site'].create({'name': 'Site mise en service',
+                                                 'site_type': 'external'})
+        self.env['res.currency'].search([('id', '!=', self.env.company.currency_id.id)]).write(
+            {'active': False})
+        wizard.action_refresh()
+        self.assertEqual(wizard.line_ids.filtered(lambda l: l.key == 'sites').status, 'ok')
+        self.assertEqual(wizard.line_ids.filtered(
+            lambda l: l.key == 'currency_rates').status, 'warning')
