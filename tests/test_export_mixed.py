@@ -365,6 +365,23 @@ class TestDashboardFamilies(MixedExportCase):
         self.assertEqual(beans.product_domain('potting.local.sale'), [(0, '=', 1)])
         self.assertFalse(semi.product_domain('potting.local.sale'))
 
+    def test_242b_documents_without_family_stay_visible(self):
+        """Conteneur vide (aucun lot) : n'appartient à aucune filière, il ne
+        disparaît d'aucun tableau de bord (constaté sur données réelles)."""
+        container = self.env['potting.container'].create({
+            'name': 'CONT-VIDE-MIXTE', 'container_type': '20'})
+        Container = self.env['potting.container'].sudo()
+        for family in ('beans', 'semi_finished'):
+            scope = self._scope_for(self.both_user, family)
+            self.assertIn(container, Container.search(
+                scope.product_domain('potting.container') + [('id', '=', container.id)]))
+        filled = self.env['potting.container'].create({
+            'name': 'CONT-FEVES-MIXTE', 'container_type': '20'})
+        self.ot.lot_ids[:1].write({'container_id': filled.id})
+        semi = self._scope_for(self.both_user, 'semi_finished')
+        self.assertFalse(Container.search(
+            semi.product_domain('potting.container') + [('id', '=', filled.id)]))
+
     def test_243_the_three_dashboards_take_the_family(self):
         data = self.env['potting.dashboard'].with_user(self.both_user).get_dashboard_data(
             'campaign', None, None, self.campaign.id, None, 'beans')
