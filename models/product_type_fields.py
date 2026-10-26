@@ -6,16 +6,19 @@ CV, formule, produits, assistants d'import et de rapport). Chacun reçoit ici
 ``cocoa_beans`` ; le test ``test_every_product_type_selection_has_beans``
 échoue si un nouveau champ du socle est oublié.
 
-Mode « fèves uniquement » (réglage, actif par défaut) : les semi-finis sont
-retirés des listes de choix (``fields_get``) et refusés à l'enregistrement
-sur les documents métier. Les champs gardent leur sélection complète côté
-serveur : un libellé reste lisible et rien ne casse si le mode est coupé.
+Filières par société (res.company.export_beans / export_semi_finished) : un
+type d'une filière que la société n'exporte pas est retiré des listes de
+choix (``fields_get``, sociétés sélectionnées et filières de l'utilisateur)
+et refusé à l'enregistrement sur les documents métier (filières de la
+société du document). Les champs gardent leur sélection complète côté
+serveur : un libellé reste lisible et rien ne casse si une filière est
+coupée.
 """
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
-from .product_spec import PRODUCT_TYPE
+from .product_spec import PRODUCT_TYPE, family_of
 
 BEANS = [(PRODUCT_TYPE, "Fèves de cacao")]
 
@@ -56,17 +59,17 @@ class BeanProductTypeMixin(models.AbstractModel):
         return res
 
     def _check_bean_product_type_active(self):
-        Spec = self.env['potting.product.spec']
-        known = set(Spec.get_product_types(include_inactive=True))
-        active = set(Spec.get_product_types())
+        known = set(self.env['potting.product.spec'].get_product_types(include_inactive=True))
         for record in self:
+            company = record.company_id or self.env.company
+            families = company.sudo()._export_families()
             for name in self._bean_product_type_guarded:
                 value = record[name]
-                if value and value in known and value not in active:
+                if value and value in known and family_of(value) not in families:
                     raise ValidationError(_(
-                        "« %(type)s » n'est pas exporté par cette société "
-                        "(réglage « Fèves uniquement »). Choisissez « Fèves "
-                        "de cacao ».",
+                        "%(company)s n'exporte pas « %(type)s » (Paramètres ▸ "
+                        "Export ▸ Filières exportées).",
+                        company=company.name,
                         type=dict(record._fields[name].selection).get(value, value)))
 
 
@@ -81,7 +84,7 @@ class PottingCustomerOrder(models.Model):
 
     product_type = fields.Selection(selection_add=BEANS, ondelete=ONDELETE)
 
-    @api.constrains('product_type')
+    @api.constrains('product_type', 'company_id')
     def _check_bean_export_product_type(self):
         self._check_bean_product_type_active()
 
@@ -93,7 +96,7 @@ class PottingTransitOrder(models.Model):
 
     product_type = fields.Selection(selection_add=BEANS, ondelete=ONDELETE)
 
-    @api.constrains('product_type')
+    @api.constrains('product_type', 'company_id')
     def _check_bean_export_product_type(self):
         self._check_bean_product_type_active()
 
@@ -105,7 +108,7 @@ class PottingLot(models.Model):
 
     product_type = fields.Selection(selection_add=BEANS, ondelete=ONDELETE)
 
-    @api.constrains('product_type')
+    @api.constrains('product_type', 'company_id')
     def _check_bean_export_product_type(self):
         self._check_bean_product_type_active()
 
@@ -117,7 +120,7 @@ class PottingFormule(models.Model):
 
     product_type = fields.Selection(selection_add=BEANS, ondelete=ONDELETE)
 
-    @api.constrains('product_type')
+    @api.constrains('product_type', 'company_id')
     def _check_bean_export_product_type(self):
         self._check_bean_product_type_active()
 
@@ -132,7 +135,7 @@ class PottingConfirmationVente(models.Model):
         selection_add=[(PRODUCT_TYPE, "Fèves de cacao"), ('all',)],
         ondelete=ONDELETE)
 
-    @api.constrains('product_type')
+    @api.constrains('product_type', 'company_id')
     def _check_bean_export_product_type(self):
         self._check_bean_product_type_active()
 

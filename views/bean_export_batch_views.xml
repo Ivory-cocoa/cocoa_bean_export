@@ -10,7 +10,9 @@
                   decoration-success="allocation_status == 'full'">
                 <field name="name"/>
                 <field name="date"/>
+                <field name="origin" optional="show"/>
                 <field name="site_id"/>
+                <field name="warehouse_id" optional="show"/>
                 <field name="site_lot_ref"/>
                 <field name="weighing_ticket" optional="show"/>
                 <field name="certification_id" optional="show"/>
@@ -67,13 +69,24 @@
                     <field name="is_bulk" invisible="1"/>
                     <field name="company_id" invisible="1"/>
                     <group>
-                        <group string="Bulletin de pesée du site">
+                        <group string="Bulletin de pesée de sortie">
+                            <field name="origin" widget="radio" readonly="state != 'draft'"
+                                   options="{'horizontal': true}"/>
                             <field name="processing_id" readonly="state != 'draft'"
+                                   invisible="origin != 'site'"
                                    options="{'no_create': True}"
                                    placeholder="Usinage suivi dans Odoo (facultatif)"/>
                             <field name="site_id" readonly="state != 'draft' or processing_id"
+                                   invisible="origin != 'site'" required="origin == 'site'"
                                    options="{'no_create': True}"/>
-                            <field name="site_lot_ref" readonly="state != 'draft'"/>
+                            <field name="warehouse_id" readonly="state != 'draft'"
+                                   invisible="origin != 'warehouse'"
+                                   required="origin == 'warehouse'"
+                                   options="{'no_create': True}"/>
+                            <field name="site_lot_ref" readonly="state != 'draft'"
+                                   required="origin == 'site'"
+                                   placeholder="Défaut : la référence du lot d'usinage"
+                                   string="N° de lot (site ou bon de sortie)"/>
                             <field name="weighing_ticket" readonly="state != 'draft'"/>
                             <field name="date" readonly="state != 'draft'"/>
                             <field name="campaign_id" options="{'no_create': True}"/>
@@ -87,6 +100,9 @@
                             <field name="tare_weight_kg" readonly="state != 'draft'"/>
                             <field name="net_weight_kg" class="fw-bold"/>
                             <field name="net_per_bag_kg" invisible="not bag_count"/>
+                            <field name="stock_quantity_kg" invisible="origin != 'warehouse'"/>
+                            <field name="stock_gap_kg" invisible="origin != 'warehouse'"
+                                   decoration-warning="stock_gap_kg != 0"/>
                         </group>
                     </group>
                     <group>
@@ -110,6 +126,28 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Lots de fèves prélevés" name="stock_lines"
+                              invisible="origin != 'warehouse'">
+                            <div class="text-muted mb-2">
+                                En brouillon, ces quantités sont réservées : ni l'engagement
+                                des fèves ni les ordres de production ne les prennent. À la
+                                confirmation, le stock baisse (consommation de fèves) et le
+                                registre Mass Balance est débité pour des fèves certifiées.
+                            </div>
+                            <field name="stock_line_ids" readonly="state != 'draft'"
+                                   context="{'default_batch_id': id}">
+                                <tree editable="bottom">
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="bean_lot_id" options="{'no_create': True}"/>
+                                    <field name="traceability" optional="show"/>
+                                    <field name="certification_id" optional="show"/>
+                                    <field name="available_t" optional="show"/>
+                                    <field name="free_t"/>
+                                    <field name="quantity_t" sum="Prélevé (T)"/>
+                                    <field name="consumption_id" optional="hide"/>
+                                </tree>
+                            </field>
+                        </page>
                         <page string="Affectations aux lots export" name="allocations">
                             <field name="production_line_ids" readonly="1">
                                 <tree>
@@ -204,6 +242,9 @@
                 <filter name="full" string="Entièrement affectés"
                         domain="[('allocation_status', '=', 'full')]"/>
                 <separator/>
+                <filter name="from_site" string="Du site d'usinage" domain="[('origin', '=', 'site')]"/>
+                <filter name="from_warehouse" string="Du magasin de l'usine" domain="[('origin', '=', 'warehouse')]"/>
+                <separator/>
                 <filter name="certified" string="Certifiés" domain="[('certification_id', '!=', False)]"/>
                 <filter name="conventional" string="Conventionnels" domain="[('certification_id', '=', False)]"/>
                 <separator/>
@@ -212,6 +253,7 @@
                 <filter name="not_evaluated" string="Qualité non évaluée"
                         domain="[('quality_status', '=', 'not_evaluated')]"/>
                 <group expand="0" string="Regrouper par">
+                    <filter name="group_origin" string="Origine" context="{'group_by': 'origin'}"/>
                     <filter name="group_site" string="Site" context="{'group_by': 'site_id'}"/>
                     <filter name="group_certification" string="Certification"
                             context="{'group_by': 'certification_id'}"/>

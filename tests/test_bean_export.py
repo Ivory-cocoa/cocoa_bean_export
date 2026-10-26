@@ -45,6 +45,12 @@ class BeanExportCase(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.ICP = cls.env['ir.config_parameter'].sudo()
+        # Exportateur de fèves seules, quelle que soit la base de test ; une
+        # seule société sélectionnée (les listes de choix réunissent les
+        # filières des sociétés sélectionnées).
+        cls.env = cls.env(context=dict(cls.env.context,
+                                       allowed_company_ids=[cls.env.company.id]))
+        cls.env.company.write({'export_beans': True, 'export_semi_finished': False})
         cls.campaign = make_campaign(
             cls.env, 'Campagne fèves', date.today() - timedelta(days=30),
             date.today() + timedelta(days=335))
@@ -170,7 +176,7 @@ class TestBeanProductType(BeanExportCase):
         self.assertEqual(self.lot1.packaging_unit_name, 'sacs')
         self.assertTrue(self.lot1.name.startswith('F'), self.lot1.name)
 
-    def test_03_beans_only_hides_and_refuses_semi_finished(self):
+    def test_03_company_without_semi_finished_hides_and_refuses_them(self):
         selection = dict(self.env['potting.transit.order'].fields_get(
             ['product_type'])['product_type']['selection'])
         self.assertEqual(list(selection), ['cocoa_beans'])
@@ -184,7 +190,7 @@ class TestBeanProductType(BeanExportCase):
                               .selection)['cocoa_mass'], 'Masse de cacao')
 
     def test_04_semi_finished_allowed_when_enabled(self):
-        self.ICP.set_param('cocoa_bean_export.with_semi_finished', 'True')
+        self.env.company.export_semi_finished = True
         selection = dict(self.env['potting.transit.order'].fields_get(
             ['product_type'])['product_type']['selection'])
         self.assertIn('cocoa_mass', selection)
@@ -193,21 +199,22 @@ class TestBeanProductType(BeanExportCase):
             'campaign_id': self.campaign.id, 'product_type': 'cocoa_mass', 'tonnage': 10.0})
         self.assertEqual(ot.product_type, 'cocoa_mass')
 
-    def test_05_factory_menus_follow_the_setting(self):
+    def test_05_factory_menus_follow_the_companies(self):
         Settings = self.env['res.config.settings']
         menu = self.env.ref('potting_management.menu_potting_factory_screen')
+        others = self.env['res.company'].search([('id', '!=', self.env.company.id)])
+        others.write({'export_beans': True, 'export_semi_finished': False})
+        Settings._bean_export_sync_menus()
+        self.assertFalse(menu.active, "Aucune société ne transforme : pas d'usine")
+        self.env.company.export_semi_finished = True
+        Settings._bean_export_sync_menus()
+        self.assertTrue(menu.active, "Une société exporte des semi-finis")
+        self.env.company.export_semi_finished = False
         Settings._bean_export_sync_menus()
         self.assertFalse(menu.active)
-        group = self.env.ref('cocoa_bean_export.group_bean_export_semi_finished')
-        admin = self.env.ref('base.user_admin')
-        self.assertNotIn(admin, group.users)
-        self.ICP.set_param('cocoa_bean_export.with_semi_finished', 'True')
-        Settings._bean_export_sync_menus()
-        self.assertTrue(menu.active)
-        self.assertIn(admin, group.users, "Filtres semi-finis visibles")
-        self.ICP.set_param('cocoa_bean_export.with_semi_finished', 'False')
-        Settings._bean_export_sync_menus()
-        self.assertNotIn(admin, group.users)
+        # La filière semi-finis n'est plus accordée d'office aux internes
+        self.assertNotIn(self.env.ref('cocoa_bean_export.group_bean_export_semi_finished'),
+                         self.env.ref('base.group_user').implied_ids)
         # Une mise à jour de potting recharge ses menus et les réactive :
         # le rechargement du registre les masque de nouveau.
         menu.active = True
@@ -227,7 +234,7 @@ class TestBeanProductType(BeanExportCase):
         coefficient de 1,25 et la contrainte la refusait ; l'équivalent fèves
         (assiette des taxes et de l'apurement) suit désormais le coefficient.
         """
-        self.ICP.set_param('cocoa_bean_export.with_semi_finished', 'True')
+        self.env.company.export_semi_finished = True
         cv = self.env['potting.confirmation.vente'].create({
             'reference_ccc': 'CV-FEV-COEF',
             'grade_qualite': 'GF',

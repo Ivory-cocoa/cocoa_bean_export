@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "Exportation des fèves de cacao",
-    'version': '17.0.1.5.0',
+    'version': '17.0.2.0.0',
     'category': 'Inventory/Logistics',
     'summary': "Export de fèves de cacao brutes sur le socle Gestion des Exportations",
     'description': """
@@ -22,8 +22,13 @@ Propre aux fèves :
 - Conditionnement réglable : sacs de jute (poids nominal et tare) ou vrac ;
 - Code SH 1801 00 00 00, coefficient de conversion fèves = 1 (assiette des
   taxes CCC), facteur Mass Balance = 1 ;
-- Mode « fèves uniquement » : les semi-finis disparaissent des listes de
-  choix, des tableaux de bord et des menus de production ;
+- Filières par société (fèves, semi-finis ou les deux) dans une base
+  multi-sociétés, et droits par filière (groupes « Filière fèves » /
+  « Filière semi-finis ») : règles d'accès, listes de choix, filtre
+  « Fèves / Semi-finis / Tout » des tableaux de bord ;
+- Fèves exportées depuis un site d'usinage OU le magasin de l'usine
+  (réservation contre la production, sortie du stock, débit Mass Balance) ;
+- Une CV « Tous produits » ne sert qu'une filière ;
 - Qualité évaluée avec les normes et grilles de grades du module fèves ;
 - Documents d'export par BL (liste et exigences configurables) ;
 - EUDR : lots de fèves d'origine ou GeoJSON fourni, vérifié ;
@@ -60,6 +65,7 @@ Propre aux fèves :
         'views/guide/beans_guide_en.xml',
         'views/menu_views.xml',
     ],
+    'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': False,
     'auto_install': False,

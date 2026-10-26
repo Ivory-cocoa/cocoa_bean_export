@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Filtres des semi-finis : visibles seulement si la société exporte
-         aussi des semi-finis (groupe accordé par le réglage). -->
+    <!-- Filtres par type : chacun visible des seuls utilisateurs de sa
+         filière (Filière fèves / Filière semi-finis). -->
     <record id="potting_lot_view_search_bean_export" model="ir.ui.view">
         <field name="name">potting.lot.search.bean.export</field>
         <field name="model">potting.lot</field>
         <field name="inherit_id" ref="potting_management.potting_lot_view_search"/>
         <field name="arch" type="xml">
             <xpath expr="//filter[@name='cocoa_mass']" position="before">
-                <filter string="Fèves de cacao" name="cocoa_beans"
+                <filter string="Fèves de cacao" name="cocoa_beans" groups="cocoa_bean_export.group_bean_export_beans"
                         domain="[('product_type', '=', 'cocoa_beans')]"/>
             </xpath>
             <xpath expr="//filter[@name='cocoa_mass']" position="attributes">
@@ -32,7 +32,7 @@
         <field name="inherit_id" ref="potting_management.potting_delivery_note_view_search"/>
         <field name="arch" type="xml">
             <xpath expr="//filter[@name='cocoa_mass']" position="before">
-                <filter string="Fèves de cacao" name="cocoa_beans"
+                <filter string="Fèves de cacao" name="cocoa_beans" groups="cocoa_bean_export.group_bean_export_beans"
                         domain="[('product_type', '=', 'cocoa_beans')]"/>
             </xpath>
             <xpath expr="//filter[@name='cocoa_mass']" position="attributes">

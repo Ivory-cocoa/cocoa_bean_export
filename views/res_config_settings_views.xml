@@ -7,9 +7,16 @@
         <field name="arch" type="xml">
             <xpath expr="//block[@name='potting_mass_balance_config']" position="before">
                 <block title="🌰 Export des fèves de cacao" name="bean_export_config">
-                    <setting id="bean_export_scope" string="Produits exportés"
-                             help="Décoché : la société n'exporte que des fèves ; les semi-finis disparaissent des listes de choix, des tableaux de bord et des menus d'usine.">
-                        <field name="bean_export_with_semi_finished"/>
+                    <setting id="bean_export_scope" string="Filières exportées par cette société"
+                             help="Propre à chaque société de la base. Une filière non exportée disparaît des listes de choix et des tableaux de bord de la société, et ses documents y sont refusés. Chaque utilisateur ne voit en outre que les filières de ses groupes (fiche utilisateur ▸ Filières d'export).">
+                        <div class="d-flex flex-column">
+                            <div><field name="bean_export_export_beans" class="me-2"/><label for="bean_export_export_beans"/></div>
+                            <div><field name="bean_export_with_semi_finished" class="me-2"/><label for="bean_export_with_semi_finished"/></div>
+                        </div>
+                        <div class="text-muted mt-2"><field name="bean_export_family_user_counts"/></div>
+                        <button name="action_bean_export_family_users" type="object"
+                                string="Droits des utilisateurs" icon="oi-arrow-right"
+                                class="btn-link ps-0"/>
                     </setting>
                     <setting id="bean_export_packaging" string="Conditionnement"
                              help="Sacs de jute ou vrac. Le tonnage d'un lot est toujours le poids net pesé au site.">

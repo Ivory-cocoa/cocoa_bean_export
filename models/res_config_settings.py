@@ -6,8 +6,9 @@ import logging
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
-from .product_spec import (DEFAULT_BAG_WEIGHT_KG, PARAM_BAG_WEIGHT,
-                           PARAM_PACKAGING, PARAM_WITH_SEMI_FINISHED)
+from .export_family import FAMILY_LABELS
+from .product_spec import (DEFAULT_BAG_WEIGHT_KG, FAMILY_GROUPS, FAMILY_SEMI_FINISHED,
+                           PARAM_BAG_WEIGHT, PARAM_PACKAGING)
 
 _logger = logging.getLogger(__name__)
 
@@ -15,12 +16,15 @@ _logger = logging.getLogger(__name__)
 class ResConfigSettingsBeans(models.TransientModel):
     _inherit = 'res.config.settings'
 
+    # Filières de la société courante (propres à chaque société de la base)
+    bean_export_export_beans = fields.Boolean(
+        related='company_id.export_beans', readonly=False,
+        string="Fèves de cacao")
     bean_export_with_semi_finished = fields.Boolean(
-        string="Exporter aussi des semi-finis",
-        config_parameter=PARAM_WITH_SEMI_FINISHED,
-        help="Décoché (défaut) : seules les fèves sont proposées ; masse, "
-             "beurre, cake et poudre disparaissent des listes de choix et "
-             "des tableaux de bord.")
+        related='company_id.export_semi_finished', readonly=False,
+        string="Semi-finis (masse, beurre, cake, poudre)")
+    bean_export_family_user_counts = fields.Char(
+        compute='_compute_bean_export_family_user_counts')
     bean_export_packaging = fields.Selection([
         ('bags', "Sacs de jute"),
         ('bulk', "Vrac (liner)"),
@@ -131,27 +135,39 @@ class ResConfigSettingsBeans(models.TransientModel):
         'potting_management.menu_potting_local',
     )
 
+    @api.depends('company_id')
+    def _compute_bean_export_family_user_counts(self):
+        for settings in self:
+            parts = []
+            for family, xmlid in FAMILY_GROUPS.items():
+                group = self.env.ref(xmlid, raise_if_not_found=False)
+                users = group.sudo().users.filtered(
+                    lambda u: u.active and not u.share
+                    and settings.company_id in u.company_ids) if group else []
+                parts.append(_("%(family)s : %(count)s utilisateur(s)",
+                               family=FAMILY_LABELS[family], count=len(users)))
+            settings.bean_export_family_user_counts = " · ".join(parts)
+
+    def action_bean_export_family_users(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _("Utilisateurs et filières d'export"),
+            'res_model': 'res.users',
+            'view_mode': 'tree,form',
+            'domain': [('share', '=', False), ('company_ids', 'in', self.company_id.ids)],
+        }
+
     @api.model
     def _bean_export_sync_menus(self):
-        """Aligne l'interface sur « fèves uniquement » : menus d'usine et
-        filtres de recherche des semi-finis (groupe technique accordé à tous
-        les utilisateurs internes, ou retiré — comme un implied_group)."""
-        show = not self.env['potting.product.spec']._is_beans_only()
+        """Menus d'usine (production de semi-finis, écran usine, vente locale)
+        : actifs si au moins une société de la base exporte des semi-finis.
+        Les documents eux-mêmes restent filtrés par filière (règles d'accès)."""
+        companies = self.env['res.company'].sudo().search([])
+        show = FAMILY_SEMI_FINISHED in companies._export_families()
         for xmlid in self._BEAN_EXPORT_FACTORY_MENUS:
             menu = self.env.ref(xmlid, raise_if_not_found=False)
             if menu and menu.active != show:
                 menu.sudo().active = show
-        semi_finished = self.env.ref(
-            'cocoa_bean_export.group_bean_export_semi_finished', raise_if_not_found=False)
-        internal = self.env.ref('base.group_user').sudo()
-        if semi_finished:
-            semi_finished = semi_finished.sudo()
-            if show and semi_finished not in internal.implied_ids:
-                internal.write({'implied_ids': [(4, semi_finished.id)]})
-            elif not show and semi_finished in internal.implied_ids:
-                internal.write({'implied_ids': [(3, semi_finished.id)]})
-                # Retirer l'implication ne retire pas les membres (Odoo)
-                semi_finished.write({'users': [(3, user.id) for user in semi_finished.users]})
         return True
 
     def set_values(self):

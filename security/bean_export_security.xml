@@ -1,11 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Groupe technique : accordé à tous les utilisateurs internes quand la
-         société exporte aussi des semi-finis (réglage), retiré sinon. Il
-         porte les filtres de recherche « Masse / Beurre / Cake / Poudre ». -->
+    <!--
+    Droits par filière d'export.
+
+    Règles de GROUPE : Odoo réunit (OU) celles des groupes de l'utilisateur.
+      * « aucune filière » (utilisateurs internes) : rien — un utilisateur
+        sans filière ne voit aucun document d'export ;
+      * « filière fèves » : les documents de fèves ;
+      * « filière semi-finis » : les documents de semi-finis (et ceux sans
+        type, antérieurs aux filières).
+    Un utilisateur des deux filières voit tout. Les règles de société du
+    socle (globales) restent en vigueur : elles se cumulent (ET).
+
+    Une CV « Tous produits » est visible des deux filières (elle ne sert
+    qu'une seule filière : contrainte sur les formules). Les modèles qui
+    peuvent mêler les deux filières (paiements groupés, factures de
+    transitaire, conteneurs, notes de débit) n'ont pas de règle de filière.
+    -->
+    <record id="module_category_export_family" model="ir.module.category">
+        <field name="name">Filières d'export</field>
+        <field name="description">Filières dont l'utilisateur voit les documents d'export.</field>
+        <field name="sequence">31</field>
+    </record>
+
+    <record id="group_bean_export_beans" model="res.groups">
+        <field name="name">Filière fèves</field>
+        <field name="category_id" ref="module_category_export_family"/>
+        <field name="comment">Voit et traite les documents d'export de fèves de cacao.</field>
+    </record>
+
+    <!-- Ancien groupe technique « semi-finis visibles » : devient la filière -->
     <record id="group_bean_export_semi_finished" model="res.groups">
-        <field name="name">Export : semi-finis visibles</field>
-        <field name="category_id" ref="base.module_category_hidden"/>
+        <field name="name">Filière semi-finis</field>
+        <field name="category_id" ref="module_category_export_family"/>
+        <field name="comment">Voit et traite les documents d'export de masse, beurre, cake et poudre.</field>
     </record>
 
     <record id="rule_bean_export_batch_company" model="ir.rule">
@@ -27,5 +55,468 @@
         <field name="name">Réclamations à l'arrivée : sociétés autorisées</field>
         <field name="model_id" ref="model_cocoa_bean_export_claim"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="rule_bean_export_batch_stock_line_company" model="ir.rule">
+        <field name="name">Prélèvements du magasin : sociétés autorisées</field>
+        <field name="model_id" ref="model_cocoa_bean_export_batch_stock_line"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <!-- Contrats clients -->
+    <record id="rule_family_none_potting_customer_order" model="ir.rule">
+        <field name="name">Contrats clients : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_order"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_customer_order" model="ir.rule">
+        <field name="name">Contrats clients : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_order"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_customer_order" model="ir.rule">
+        <field name="name">Contrats clients : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_order"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Ordres de transit -->
+    <record id="rule_family_none_potting_transit_order" model="ir.rule">
+        <field name="name">Ordres de transit : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_transit_order"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_transit_order" model="ir.rule">
+        <field name="name">Ordres de transit : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_transit_order"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_transit_order" model="ir.rule">
+        <field name="name">Ordres de transit : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_transit_order"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Lots -->
+    <record id="rule_family_none_potting_lot" model="ir.rule">
+        <field name="name">Lots : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_lot"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_lot" model="ir.rule">
+        <field name="name">Lots : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_lot"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_lot" model="ir.rule">
+        <field name="name">Lots : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_lot"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Formules -->
+    <record id="rule_family_none_potting_formule" model="ir.rule">
+        <field name="name">Formules : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_formule"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_formule" model="ir.rule">
+        <field name="name">Formules : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_formule"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_formule" model="ir.rule">
+        <field name="name">Formules : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_formule"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- BL -->
+    <record id="rule_family_none_potting_delivery_note" model="ir.rule">
+        <field name="name">BL : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_delivery_note"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_delivery_note" model="ir.rule">
+        <field name="name">BL : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_delivery_note"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_delivery_note" model="ir.rule">
+        <field name="name">BL : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_delivery_note"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Factures export -->
+    <record id="rule_family_none_potting_customer_invoice" model="ir.rule">
+        <field name="name">Factures export : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_customer_invoice" model="ir.rule">
+        <field name="name">Factures export : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_customer_invoice" model="ir.rule">
+        <field name="name">Factures export : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Factures de soutien -->
+    <record id="rule_family_none_potting_soutien_invoice" model="ir.rule">
+        <field name="name">Factures de soutien : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_soutien_invoice"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_soutien_invoice" model="ir.rule">
+        <field name="name">Factures de soutien : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_soutien_invoice"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_soutien_invoice" model="ir.rule">
+        <field name="name">Factures de soutien : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_soutien_invoice"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Lignes de production -->
+    <record id="rule_family_none_potting_production_line" model="ir.rule">
+        <field name="name">Lignes de production : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_production_line"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_production_line" model="ir.rule">
+        <field name="name">Lignes de production : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_production_line"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_production_line" model="ir.rule">
+        <field name="name">Lignes de production : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_production_line"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Allocations OT ↔ contrat -->
+    <record id="rule_family_none_potting_ot_contract_allocation" model="ir.rule">
+        <field name="name">Allocations OT ↔ contrat : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_ot_contract_allocation"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_ot_contract_allocation" model="ir.rule">
+        <field name="name">Allocations OT ↔ contrat : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_ot_contract_allocation"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('transit_order_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_ot_contract_allocation" model="ir.rule">
+        <field name="name">Allocations OT ↔ contrat : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_ot_contract_allocation"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('transit_order_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Allocations lot ↔ contrat -->
+    <record id="rule_family_none_potting_lot_contract_allocation" model="ir.rule">
+        <field name="name">Allocations lot ↔ contrat : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_lot_contract_allocation"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_lot_contract_allocation" model="ir.rule">
+        <field name="name">Allocations lot ↔ contrat : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_lot_contract_allocation"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('lot_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_lot_contract_allocation" model="ir.rule">
+        <field name="name">Allocations lot ↔ contrat : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_lot_contract_allocation"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('lot_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- D6 -->
+    <record id="rule_family_none_potting_d6" model="ir.rule">
+        <field name="name">D6 : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_d6"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_d6" model="ir.rule">
+        <field name="name">D6 : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_d6"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('transit_order_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_d6" model="ir.rule">
+        <field name="name">D6 : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_d6"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('transit_order_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Coûts -->
+    <record id="rule_family_none_potting_cost_line" model="ir.rule">
+        <field name="name">Coûts : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_cost_line"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_cost_line" model="ir.rule">
+        <field name="name">Coûts : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_cost_line"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('transit_order_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_cost_line" model="ir.rule">
+        <field name="name">Coûts : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_cost_line"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('transit_order_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Taxes des formules -->
+    <record id="rule_family_none_potting_formule_taxe" model="ir.rule">
+        <field name="name">Taxes des formules : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_formule_taxe"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_formule_taxe" model="ir.rule">
+        <field name="name">Taxes des formules : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_formule_taxe"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('formule_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_formule_taxe" model="ir.rule">
+        <field name="name">Taxes des formules : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_formule_taxe"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('formule_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Lignes de facture export -->
+    <record id="rule_family_none_potting_customer_invoice_line" model="ir.rule">
+        <field name="name">Lignes de facture export : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice_line"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_customer_invoice_line" model="ir.rule">
+        <field name="name">Lignes de facture export : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice_line"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('invoice_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_customer_invoice_line" model="ir.rule">
+        <field name="name">Lignes de facture export : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice_line"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('invoice_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Encaissements -->
+    <record id="rule_family_none_potting_customer_invoice_payment" model="ir.rule">
+        <field name="name">Encaissements : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice_payment"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_customer_invoice_payment" model="ir.rule">
+        <field name="name">Encaissements : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice_payment"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('invoice_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_customer_invoice_payment" model="ir.rule">
+        <field name="name">Encaissements : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_customer_invoice_payment"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('invoice_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Demandes de modification d'OT -->
+    <record id="rule_family_none_potting_ot_modification_request" model="ir.rule">
+        <field name="name">Demandes de modification d'OT : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_ot_modification_request"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_ot_modification_request" model="ir.rule">
+        <field name="name">Demandes de modification d'OT : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_ot_modification_request"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('transit_order_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_ot_modification_request" model="ir.rule">
+        <field name="name">Demandes de modification d'OT : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_ot_modification_request"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('transit_order_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Pesées -->
+    <record id="rule_family_none_potting_weighing" model="ir.rule">
+        <field name="name">Pesées : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_weighing"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_weighing" model="ir.rule">
+        <field name="name">Pesées : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_weighing"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">['|', ('transit_order_id', '=', False), ('transit_order_id.product_type', '=', 'cocoa_beans')]</field>
+    </record>
+    <record id="rule_family_semi_potting_weighing" model="ir.rule">
+        <field name="name">Pesées : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_weighing"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">['|', ('transit_order_id', '=', False), ('transit_order_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- CV -->
+    <record id="rule_family_none_potting_confirmation_vente" model="ir.rule">
+        <field name="name">CV : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_confirmation_vente"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_confirmation_vente" model="ir.rule">
+        <field name="name">CV : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_confirmation_vente"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('product_type', 'in', ['cocoa_beans', 'all'])]</field>
+    </record>
+    <record id="rule_family_semi_potting_confirmation_vente" model="ir.rule">
+        <field name="name">CV : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_confirmation_vente"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Mouvements de CV -->
+    <record id="rule_family_none_potting_cv_movement" model="ir.rule">
+        <field name="name">Mouvements de CV : aucune filière</field>
+        <field name="model_id" ref="potting_management.model_potting_cv_movement"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_potting_cv_movement" model="ir.rule">
+        <field name="name">Mouvements de CV : filière fèves</field>
+        <field name="model_id" ref="potting_management.model_potting_cv_movement"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[('cv_id.product_type', 'in', ['cocoa_beans', 'all'])]</field>
+    </record>
+    <record id="rule_family_semi_potting_cv_movement" model="ir.rule">
+        <field name="name">Mouvements de CV : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_cv_movement"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_semi_finished'))]"/>
+        <field name="domain_force">[('cv_id.product_type', '!=', 'cocoa_beans')]</field>
+    </record>
+    <!-- Lots d'usinage -->
+    <record id="rule_family_none_cocoa_bean_export_batch" model="ir.rule">
+        <field name="name">Lots d'usinage : aucune filière</field>
+        <field name="model_id" ref="cocoa_bean_export.model_cocoa_bean_export_batch"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_cocoa_bean_export_batch" model="ir.rule">
+        <field name="name">Lots d'usinage : filière fèves</field>
+        <field name="model_id" ref="cocoa_bean_export.model_cocoa_bean_export_batch"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <!-- Prélèvements du magasin -->
+    <record id="rule_family_none_cocoa_bean_export_batch_stock_line" model="ir.rule">
+        <field name="name">Prélèvements du magasin : aucune filière</field>
+        <field name="model_id" ref="cocoa_bean_export.model_cocoa_bean_export_batch_stock_line"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_cocoa_bean_export_batch_stock_line" model="ir.rule">
+        <field name="name">Prélèvements du magasin : filière fèves</field>
+        <field name="model_id" ref="cocoa_bean_export.model_cocoa_bean_export_batch_stock_line"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <!-- Documents d'export -->
+    <record id="rule_family_none_cocoa_bean_export_document" model="ir.rule">
+        <field name="name">Documents d'export : aucune filière</field>
+        <field name="model_id" ref="cocoa_bean_export.model_cocoa_bean_export_document"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_cocoa_bean_export_document" model="ir.rule">
+        <field name="name">Documents d'export : filière fèves</field>
+        <field name="model_id" ref="cocoa_bean_export.model_cocoa_bean_export_document"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <!-- Réclamations à l'arrivée -->
+    <record id="rule_family_none_cocoa_bean_export_claim" model="ir.rule">
+        <field name="name">Réclamations à l'arrivée : aucune filière</field>
+        <field name="model_id" ref="cocoa_bean_export.model_cocoa_bean_export_claim"/>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="domain_force">[(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_beans_cocoa_bean_export_claim" model="ir.rule">
+        <field name="name">Réclamations à l'arrivée : filière fèves</field>
+        <field name="model_id" ref="cocoa_bean_export.model_cocoa_bean_export_claim"/>
+        <field name="groups" eval="[Command.link(ref('cocoa_bean_export.group_bean_export_beans'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <!--
+    Activité d'usine (production de semi-finis, vente locale des sous-produits) :
+    réservée à la filière semi-finis. Règles GLOBALES (cumulées en ET avec les
+    règles de société) et non de groupe : la règle de société des ordres de
+    production est une règle de groupe, qu'une règle de groupe ajoutée ici
+    élargirait (OU) au lieu de la restreindre.
+    -->
+    <record id="rule_family_factory_potting_production_order" model="ir.rule">
+        <field name="name">Ordres de production : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_production_order"/>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('cocoa_bean_export.group_bean_export_semi_finished') else [(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_factory_potting_local_production" model="ir.rule">
+        <field name="name">Productions locales : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_local_production"/>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('cocoa_bean_export.group_bean_export_semi_finished') else [(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_factory_potting_local_sale" model="ir.rule">
+        <field name="name">Ventes locales : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_local_sale"/>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('cocoa_bean_export.group_bean_export_semi_finished') else [(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_factory_potting_local_sale_line" model="ir.rule">
+        <field name="name">Lignes de vente locale : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_local_sale_line"/>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('cocoa_bean_export.group_bean_export_semi_finished') else [(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_factory_potting_local_invoice" model="ir.rule">
+        <field name="name">Factures locales : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_local_invoice"/>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('cocoa_bean_export.group_bean_export_semi_finished') else [(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_factory_potting_local_invoice_line" model="ir.rule">
+        <field name="name">Lignes de facture locale : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_local_invoice_line"/>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('cocoa_bean_export.group_bean_export_semi_finished') else [(0, '=', 1)]</field>
+    </record>
+    <record id="rule_family_factory_potting_local_delivery" model="ir.rule">
+        <field name="name">Livraisons locales : filière semi-finis</field>
+        <field name="model_id" ref="potting_management.model_potting_local_delivery"/>
+        <field name="domain_force">[(1, '=', 1)] if user.has_group('cocoa_bean_export.group_bean_export_semi_finished') else [(0, '=', 1)]</field>
     </record>
 </odoo>
