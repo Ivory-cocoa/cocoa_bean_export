@@ -15,6 +15,8 @@ from datetime import timedelta
 
 from odoo import _, api, fields, models
 
+from ..models.product_spec import FAMILY_BEANS, FAMILY_GROUPS, FAMILY_SEMI_FINISHED
+
 ERROR, WARNING, OK = 'error', 'warning', 'ok'
 RATE_STALE_DAYS = 30
 
@@ -240,9 +242,21 @@ class CocoaBeanExportReadiness(models.TransientModel):
         return OK, ", ".join(humans.mapped('name'))
 
     def _check_scope(self):
-        if self.env['potting.product.spec']._is_beans_only():
-            return OK, _("Fèves uniquement (semi-finis masqués).")
-        return WARNING, _("Semi-finis également proposés : vérifiez que c'est voulu.")
+        company = self.env.company
+        families = company._export_families()
+        if FAMILY_BEANS not in families:
+            return ERROR, _("%s n'exporte pas de fèves (Paramètres ▸ Filières "
+                            "exportées).", company.name)
+        group = self.env.ref(FAMILY_GROUPS[FAMILY_BEANS])
+        holders = group.sudo().users.filtered(
+            lambda u: u.active and not u.share and company in u.company_ids)
+        if not holders:
+            return ERROR, _("Aucun utilisateur de %s n'a la filière fèves : personne "
+                            "ne verrait les documents de fèves.", company.name)
+        if FAMILY_SEMI_FINISHED in families:
+            return WARNING, _("Fèves et semi-finis (%s utilisateur(s) en filière fèves) : "
+                              "vérifiez les filières de chaque utilisateur.", len(holders))
+        return OK, _("Fèves uniquement (%s utilisateur(s) en filière fèves).", len(holders))
 
 
 class CocoaBeanExportReadinessLine(models.TransientModel):

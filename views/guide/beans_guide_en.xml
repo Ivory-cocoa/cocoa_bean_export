@@ -21,7 +21,10 @@
         <ul>
             <li>No factory production: lots are filled from processing batches, never by a "production".</li>
             <li>The form conversion coefficient is 1: CCC levies are based on the bean tonnage.</li>
-            <li>In "beans only" mode (default), liquor, butter, cake and powder disappear from lists, and factory menus are hidden.</li>
+            <li>Each company chooses its <b>product families</b>: beans, semi-finished products, or both. A family the company does not export disappears from its choice lists and its documents are refused; factory menus only show if a company exports semi-finished products.</li>
+            <li>Each user only sees the documents of their families (user form ▸ <b>Filières d’export</b>: Filière fèves, Filière semi-finis). Without a family, no export document is visible.</li>
+            <li>Dashboards only count the user's families; a user who sees both gets a <b>Beans and semi-finished / Beans / Semi-finished</b> selector.</li>
+            <li>An "all products" CV serves a single family: the one of its first form.</li>
         </ul>
     </template>
 
@@ -29,13 +32,23 @@
         <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_batch')"/> lists processing batches; the <i>Available</i> filter shows those with bags left to allocate.</p>
         <h3>Entering a processing batch</h3>
         <ol>
-            <li>Processing site, site lot number, weighing slip number, date.</li>
+            <li><b>Origin</b>: <i>Processing site</i> (beans processed at the site, from site to port) or <i>Factory warehouse</i> (beans taken from stock).</li>
+            <li>Processing site, site lot number, weighing slip number, date — or, from the warehouse, the warehouse and the bean lots taken.</li>
             <li>Bags, gross weight and tare: the <b>net</b> is computed (gross − tare).</li>
             <li>Certification (empty for conventional beans) and quality measurements (<i>Quality measurements</i> tab).</li>
             <li><span class="btn-ui">Confirm</span>: only a confirmed batch can be allocated.</li>
         </ol>
         <h3>When processing is tracked in Odoo</h3>
         <p>If cooperative purchases (waybills, BA slips) and site processing are tracked in the <b>Cocoa beans</b> module, select the <b>processing</b> on the batch, or click <span class="btn-ui">Lot d’usinage expédié au port</span> from the processing. Site, lot number and certification are carried over; the batch net weight becomes the <b>processing output</b>, which drives the processing loss (raw beans processed − beans out), and its BA lots prevail for EUDR. The processing closes without RUT trucks; once closed, its batches are frozen.</p>
+        <p>Its certified output debits the Mass Balance register (sale) on confirmation, and the debit goes away if the batch is cancelled: beans exported raw no longer count for certified semi-finished products.</p>
+        <h3>From the factory warehouse</h3>
+        <p>For a company that also processes, choose the <i>Factory warehouse</i> origin, the warehouse, then the <b>bean lots taken</b> (only "export cocoa" lots, processed and bagged, are accepted) and their quantity. The <i>Free</i> column deducts what production orders and other exits already reserve.</p>
+        <ul>
+            <li>In draft, the quantities are <b>reserved</b>: neither bean engagement nor production orders take them.</li>
+            <li>On confirmation, stock goes down (one consumption per lot) and the Mass Balance register is debited once for certified beans; the batch certification is taken from the lots, which prevail for EUDR.</li>
+            <li>On cancellation (as long as nothing is allocated to an export lot), stock and register return to their previous state.</li>
+            <li>The exit weighing prevails for the exported tonnage; the gap with the stock taken is shown.</li>
+        </ul>
         <p>A weighing slip cannot be entered twice for the same site. Once allocated, the batch's weights, site and certification are locked.</p>
         <h3>Importing a workbook</h3>
         <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_batch_import')"/>: an .xlsx file whose columns are recognised by their header, in any order. Required: site lot number, site, date, gross weight. French numbers ("26 400,5") and dd/mm/yyyy dates are accepted.</p>
@@ -113,7 +126,7 @@
             <thead><tr><th>Setting</th><th>Default</th></tr></thead>
             <tbody>
                 <tr><td>Trade name, acronym, NCC, REX code, RA ID</td><td>Empty: company name, initials, tax number of the company form.</td></tr>
-                <tr><td>Also export semi-finished products</td><td>No: beans only.</td></tr>
+                <tr><td>Product families exported by this company</td><td>Per existing activity at installation (beans only in a new database, semi-finished only in a database that already exports them). Specific to each company; a family cannot be removed while transit orders or contracts are open in it.</td></tr>
                 <tr><td>Packaging</td><td>65 kg jute bags, 1 kg tare; or bulk (in kg, no per-unit tare).</td></tr>
                 <tr><td>Maximum TO tonnage</td><td>1,000 t: any TO above is refused. Cannot go below an open bean TO.</td></tr>
                 <tr><td>Proposed tonnage per TO</td><td>100 t, when generating TOs from a contract (never above the maximum).</td></tr>
@@ -138,7 +151,7 @@
         <table>
             <thead><tr><th>Message</th><th>What to do</th></tr></thead>
             <tbody>
-                <tr><td>"… n'est pas exporté par cette société (réglage Fèves uniquement)"</td><td>Choose "Fèves de cacao", or tick "Also export semi-finished products".</td></tr>
+                <tr><td>"… n'exporte pas … (Paramètres ▸ Export ▸ Filières exportées)"</td><td>Choose a product type of the company's families, or tick the family in that company's Settings.</td></tr>
                 <tr><td>"Certification incompatible…"</td><td>An export lot does not mix certifications: pick batches with the lot's certification.</td></tr>
                 <tr><td>"Le lot … atteindrait … T pour une cible de …"</td><td>Reduce the bags, or tick "Full lot".</td></tr>
                 <tr><td>"Contrôle qualité (blocage)"</td><td>Non-compliant batch or grade below the sales confirmation: use another batch, or ask a Manager for an override.</td></tr>

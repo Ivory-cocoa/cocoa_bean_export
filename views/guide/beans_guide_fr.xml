@@ -23,7 +23,10 @@
         <ul>
             <li>Pas de production d’usine : les lots se remplissent à partir des lots d’usinage, jamais par une « production ».</li>
             <li>Le coefficient de conversion de la formule vaut 1 : l’assiette des taxes CCC est le tonnage de fèves.</li>
-            <li>En mode « fèves uniquement » (par défaut), masse, beurre, cake et poudre n’apparaissent plus dans les listes, et les menus d’usine sont masqués.</li>
+            <li>Chaque société choisit ses <b>filières</b> : fèves, semi-finis, ou les deux. Une filière non exportée disparaît des listes de choix de la société et ses documents y sont refusés ; les menus d’usine ne s’affichent que si une société exporte des semi-finis.</li>
+            <li>Chaque utilisateur ne voit que les documents de ses filières (fiche utilisateur ▸ <b>Filières d’export</b> : Filière fèves, Filière semi-finis). Sans filière, il ne voit aucun document d’export.</li>
+            <li>Les tableaux de bord ne comptent que les filières de l’utilisateur ; s’il voit les deux, un sélecteur propose <b>Fèves et semi-finis / Fèves / Semi-finis</b>.</li>
+            <li>Une CV « Tous produits » ne sert qu’une filière : celle de sa première formule.</li>
         </ul>
     </template>
 
@@ -31,13 +34,23 @@
         <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_batch')"/> liste les lots d’usinage ; le filtre <i>Disponibles</i> montre ceux qui ont encore des sacs à affecter.</p>
         <h3>Saisir un lot d’usinage</h3>
         <ol>
-            <li>Site d’usinage, n° de lot du site, n° de bulletin de pesée, date.</li>
+            <li><b>Origine</b> : <i>Site d’usinage</i> (fèves usinées au site, du site au port) ou <i>Magasin de l’usine</i> (fèves prélevées dans le stock).</li>
+            <li>Site d’usinage, n° de lot du site, n° de bulletin de pesée, date — ou, depuis le magasin, le magasin et les lots de fèves prélevés.</li>
             <li>Nombre de sacs, poids brut et tare : le <b>net</b> se calcule (brut − tare).</li>
             <li>Certification (vide pour des fèves conventionnelles) et mesures qualité (onglet <i>Mesures qualité</i>).</li>
             <li>Bouton <span class="btn-ui">Confirmer</span> : seul un lot confirmé peut être affecté.</li>
         </ol>
         <h3>Quand l’usinage est suivi dans Odoo</h3>
         <p>Si les achats aux coopératives (connaissements, bordereaux BA) et l’usinage du site sont suivis dans le module <b>Fèves de cacao</b>, choisissez l’<b>usinage</b> sur le lot d’usinage, ou cliquez <span class="btn-ui">Lot d’usinage expédié au port</span> depuis l’usinage. Site, n° de lot et certification sont repris ; le poids net du lot d’usinage devient la <b>sortie de l’usinage</b>, qui calcule la freinte (brousse usiné − cacao sorti), et ses lots BA font foi pour l’EUDR. L’usinage se clôture sans camion RUT ; une fois clôturé, ses lots d’usinage sont figés.</p>
+        <p>Sa sortie certifiée débite le registre Mass Balance (vente) dès la confirmation, et ce débit disparaît si le lot d’usinage est annulé : les fèves exportées brutes ne restent pas disponibles pour des semi-finis certifiés.</p>
+        <h3>Depuis le magasin de l’usine</h3>
+        <p>Pour une société qui transforme aussi, choisissez l’origine <i>Magasin de l’usine</i>, le magasin, puis les <b>lots de fèves prélevés</b> (seuls les lots « cacao export », usinés et ensachés, sont acceptés) et leur quantité. La colonne <i>Libre</i> déduit ce que réservent déjà les ordres de production et les autres sorties.</p>
+        <ul>
+            <li>En brouillon, les quantités sont <b>réservées</b> : ni l’engagement des fèves ni les ordres de production ne les prennent.</li>
+            <li>À la confirmation, le stock baisse (une consommation par lot) et le registre Mass Balance est débité une seule fois pour des fèves certifiées ; la certification du lot d’usinage est déduite des lots prélevés, qui font foi pour l’EUDR.</li>
+            <li>À l’annulation (tant que rien n’est affecté à un lot export), le stock et le registre reviennent à l’état d’avant.</li>
+            <li>La pesée de sortie fait foi pour le tonnage exporté ; l’écart avec le stock prélevé est affiché.</li>
+        </ul>
         <p>Un même bulletin de pesée ne peut pas être saisi deux fois pour un site. Une fois le lot affecté, sa pesée, son site et sa certification sont verrouillés.</p>
         <h3>Importer un classeur</h3>
         <p><t t-out="g.menu('cocoa_bean_export.menu_cocoa_bean_export_batch_import')"/> : un fichier .xlsx dont les colonnes sont reconnues par leur en-tête, dans n’importe quel ordre (« N° lot site » ou « Lots », « Bulletin », « Brut »…). Sont obligatoires : n° de lot du site, site, date, poids brut. Les nombres « 26 400,5 » et les dates jj/mm/aaaa sont acceptés.</p>
@@ -115,7 +128,7 @@
             <thead><tr><th>Réglage</th><th>Défaut</th></tr></thead>
             <tbody>
                 <tr><td>Nom commercial, sigle, NCC, code REX, ID RA</td><td>Vide : raison sociale, initiales, compte contribuable de la fiche société.</td></tr>
-                <tr><td>Exporter aussi des semi-finis</td><td>Non : fèves uniquement.</td></tr>
+                <tr><td>Filières exportées par cette société</td><td>Selon l’activité existante à l’installation (fèves seules dans une base neuve, semi-finis seuls dans une base qui en exporte déjà). Propre à chaque société ; une filière ne se retire pas tant que des OT ou contrats y sont en cours.</td></tr>
                 <tr><td>Conditionnement</td><td>Sacs de jute de 65 kg, tare 1 kg ; ou vrac (en kg, sans tare par unité).</td></tr>
                 <tr><td>Tonnage maximal d’un OT</td><td>1 000 t : tout OT au-delà est refusé. Ne peut pas descendre sous un OT de fèves en cours.</td></tr>
                 <tr><td>Tonnage proposé par OT</td><td>100 t, à la génération des OT d’un contrat (jamais au-delà du maximum).</td></tr>
@@ -140,7 +153,7 @@
         <table>
             <thead><tr><th>Message</th><th>Que faire</th></tr></thead>
             <tbody>
-                <tr><td>« … n’est pas exporté par cette société (réglage Fèves uniquement) »</td><td>Choisissez « Fèves de cacao », ou cochez « Exporter aussi des semi-finis ».</td></tr>
+                <tr><td>« … n’exporte pas … (Paramètres ▸ Export ▸ Filières exportées) »</td><td>Choisissez un type de la filière de la société, ou cochez la filière dans les Paramètres de cette société.</td></tr>
                 <tr><td>« Certification incompatible… »</td><td>Un lot export ne mélange pas les certifications : choisissez des lots d’usinage de la certification du lot.</td></tr>
                 <tr><td>« Le lot … atteindrait … T pour une cible de … »</td><td>Réduisez les sacs, ou cochez « Lot complet ».</td></tr>
                 <tr><td>« Contrôle qualité (blocage) »</td><td>Lot d’usinage non conforme ou de grade inférieur à la CV : changez de lot d’usinage, ou demandez une dérogation à un Manager.</td></tr>

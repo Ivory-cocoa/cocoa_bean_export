@@ -11,7 +11,7 @@ from odoo import _, api, models
 from odoo.exceptions import ValidationError
 from odoo.tools import float_compare
 
-from .product_spec import PRODUCT_TYPE
+from .product_spec import PRODUCT_TYPE, family_of
 
 
 class PottingFormuleBeans(models.Model):
@@ -55,3 +55,35 @@ class PottingFormuleBeans(models.Model):
                     "Formule %s : pour des fèves, le coefficient de conversion "
                     "vaut 1 (le tonnage converti est le tonnage de fèves).",
                     formule.display_name))
+
+    @api.constrains('confirmation_vente_id', 'product_type', 'state')
+    def _check_cv_single_family(self):
+        """Une CV « Tous produits » sert une seule filière.
+
+        Fèves et semi-finis n'ont ni le même coefficient, ni le même DUS, ni
+        le même régime de soutien/reversement : une CV ouverte à tous les
+        produits prend la filière de sa première formule, et une formule de
+        l'autre filière doit passer par une autre CV.
+        """
+        for formule in self:
+            cv = formule.confirmation_vente_id
+            if not cv or not formule.product_type or formule.state == 'cancelled' \
+                    or cv.product_type != 'all':
+                continue
+            others = self.sudo().search([
+                ('confirmation_vente_id', '=', cv.id),
+                ('id', '!=', formule.id),
+                ('state', '!=', 'cancelled'),
+                ('product_type', '!=', False),
+            ])
+            family = family_of(formule.product_type)
+            mixed = others.filtered(lambda f: family_of(f.product_type) != family)
+            if mixed:
+                raise ValidationError(_(
+                    "La CV %(cv)s sert déjà des %(other)s (formule %(formule)s) : "
+                    "une CV « Tous produits » ne couvre qu'une filière. Utilisez "
+                    "une autre CV pour les %(this)s.",
+                    cv=cv.display_name, formule=mixed[0].display_name,
+                    other=_("fèves") if family_of(mixed[0].product_type) == 'beans'
+                    else _("semi-finis"),
+                    this=_("fèves") if family == 'beans' else _("semi-finis")))

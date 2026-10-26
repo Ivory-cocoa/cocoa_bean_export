@@ -13,10 +13,26 @@ PRODUCT_TYPE = 'cocoa_beans'
 
 PARAM_PACKAGING = 'cocoa_bean_export.packaging'          # 'bags' | 'bulk'
 PARAM_BAG_WEIGHT = 'cocoa_bean_export.bag_weight_kg'
-# Booléen « exporter aussi des semi-finis » : un booléen config_parameter mis à
-# Faux SUPPRIME le paramètre — l'absence doit donc valoir le défaut (fèves
-# uniquement), d'où ce sens inversé.
-PARAM_WITH_SEMI_FINISHED = 'cocoa_bean_export.with_semi_finished'
+# Ancien réglage global « exporter aussi des semi-finis » (jusqu'à 17.0.1.x) :
+# remplacé par les filières de chaque société, lu une seule fois par la
+# migration 17.0.2.0.0.
+LEGACY_PARAM_WITH_SEMI_FINISHED = 'cocoa_bean_export.with_semi_finished'
+
+# Filières d'export : une société exporte des fèves, des semi-finis, ou les
+# deux (res.company.export_beans / export_semi_finished) ; un utilisateur n'en
+# voit que celles de ses groupes « Filière fèves » / « Filière semi-finis ».
+FAMILY_BEANS = 'beans'
+FAMILY_SEMI_FINISHED = 'semi_finished'
+FAMILIES = (FAMILY_BEANS, FAMILY_SEMI_FINISHED)
+FAMILY_GROUPS = {
+    FAMILY_BEANS: 'cocoa_bean_export.group_bean_export_beans',
+    FAMILY_SEMI_FINISHED: 'cocoa_bean_export.group_bean_export_semi_finished',
+}
+
+
+def family_of(product_type):
+    """Filière d'un type de produit (semi-finis : tout ce qui n'est pas fève)."""
+    return FAMILY_BEANS if product_type == PRODUCT_TYPE else FAMILY_SEMI_FINISHED
 
 DEFAULT_BAG_WEIGHT_KG = 65.0
 # Tare d'un sac de jute (kg) : paramètre du socle potting_management.tare_<type>
@@ -42,8 +58,6 @@ class PottingProductSpecBeans(models.AbstractModel):
             'packaging': packaging if packaging in ('bags', 'bulk') else 'bags',
             'bag_weight_kg': _to_float(ICP.get_param(PARAM_BAG_WEIGHT),
                                        DEFAULT_BAG_WEIGHT_KG),
-            'beans_only': str(ICP.get_param(PARAM_WITH_SEMI_FINISHED) or '').lower()
-                          in ('0', 'false', 'none', ''),
         }
 
     @api.model
@@ -85,12 +99,36 @@ class PottingProductSpecBeans(models.AbstractModel):
                                'beans', 'raw cocoa beans'),
             'bulk': bulk,
         }
-        if settings['beans_only']:
-            for code, spec in specs.items():
-                if code != PRODUCT_TYPE:
-                    spec['active'] = False
+        families = self._active_export_families()
+        for code, spec in specs.items():
+            if family_of(code) not in families:
+                spec['active'] = False
         return specs
 
     @api.model
-    def _is_beans_only(self):
-        return self._bean_export_settings()['beans_only']
+    def _active_export_families(self):
+        """Filières proposées ici et maintenant.
+
+        Celles des sociétés sélectionnées (``env.companies``), restreintes à
+        celles de l'utilisateur — sauf en ``sudo`` ou pour le superutilisateur
+        (crons, calculs serveur), où seules les sociétés comptent. Les écrans
+        qui agrègent en ``sudo`` (tableaux de bord) filtrent eux-mêmes par
+        utilisateur.
+        """
+        families = self.env.companies._export_families()
+        if not self.env.su:
+            families &= self.env.user._export_families()
+        return families
+
+    @api.model
+    def _user_export_families(self):
+        """Filières visibles par l'utilisateur courant, même en ``sudo`` :
+        celles de ses sociétés sélectionnées ET de ses groupes."""
+        return (self.env.companies._export_families()
+                & self.env.user._export_families())
+
+    @api.model
+    def _types_of_families(self, families):
+        """Codes des types de produit des filières données (inactifs compris)."""
+        return [code for code in self.get_product_types(include_inactive=True)
+                if family_of(code) in families]

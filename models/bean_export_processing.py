@@ -11,7 +11,11 @@ Rattacher un lot d'usinage à son usinage :
   * sa sortie nette entre dans la freinte de l'usinage (brousse usiné −
     cacao sorti), avec les alertes et retenues du module fèves ;
   * ses lots BA d'origine — donc leurs planteurs et parcelles — font foi
-    pour l'EUDR, sans fichier GeoJSON à fournir.
+    pour l'EUDR, sans fichier GeoJSON à fournir ;
+  * sa sortie certifiée débite le registre Mass Balance (vente) : les lots
+    BA ont été crédités à la réception et l'usinage ne débite que la freinte.
+    Sans ce débit, le même volume certifié resterait disponible pour les
+    semi-finis certifiés d'une société qui fait aussi de la transformation.
 """
 
 from odoo import _, api, fields, models
@@ -55,13 +59,68 @@ class CocoaBeanExportBatchProcessing(models.Model):
                     exp=expected.name or _("ordinaire"), batch=batch.name,
                     act=batch.certification_id.name or _("conventionnel")))
 
+    mb_entry_ids = fields.One2many(
+        'cocoa.mb.entry', 'export_batch_id', string="Écritures Mass Balance",
+        readonly=True)
+
     def action_confirm(self):
-        for batch in self.filtered(lambda b: b.state == 'draft' and b.processing_id):
+        drafts = self.filtered(lambda b: b.state == 'draft' and b.processing_id)
+        for batch in drafts:
             if batch.processing_id.state != 'processing':
                 raise UserError(_(
                     "L'usinage %s n'est pas en cours : un lot d'usinage ne s'y "
                     "rattache plus.", batch.processing_id.display_name))
-        return super().action_confirm()
+        result = super().action_confirm()
+        drafts.filtered(lambda b: b.state == 'confirmed')._mb_debit_export()
+        return result
+
+    def action_cancel(self):
+        result = super().action_cancel()
+        self._mb_release_export()
+        return result
+
+    def action_draft(self):
+        result = super().action_draft()
+        self._mb_release_export()
+        return result
+
+    def _mb_debit_export(self):
+        """Débit « vente » de la sortie certifiée d'un usinage suivi.
+
+        Seuls les lots rattachés à un usinage sont débités : leurs fèves ont
+        été créditées au registre à la réception des lots BA. Un lot
+        d'usinage sans usinage (fèves achetées hors Odoo) n'y est jamais
+        entré ; une sortie du magasin est débitée par sa consommation.
+        """
+        Entry = self.env['cocoa.mb.entry'].sudo()
+        start = Entry._debit_start_date()
+        if not start:
+            return
+        for batch in self:
+            certification = batch.sudo().processing_id.certification_id
+            if not certification or batch.mb_entry_ids:
+                continue
+            if batch.date and batch.date < start:
+                continue
+            try:
+                Entry.create({
+                    'date': batch.date or fields.Date.context_today(self),
+                    'certification_id': certification.id,
+                    'entry_type': 'sale',
+                    'quantity_kg': batch.net_weight_kg,
+                    'export_batch_id': batch.id,
+                    'reference': batch.name,
+                    'notes': _("Fèves certifiées exportées brutes (lot d'usinage %s)",
+                               batch.name),
+                    'company_id': batch.company_id.id,
+                })
+            except ValidationError as exc:
+                raise UserError(_(
+                    "Lot d'usinage certifié %(batch)s refusé : %(err)s",
+                    batch=batch.name, err=exc.args[0])) from exc
+
+    def _mb_release_export(self):
+        self.sudo().mb_entry_ids.unlink()
 
     def write(self, vals):
         # Une sortie d'usinage clôturé ne change plus : la freinte et les
@@ -77,6 +136,14 @@ class CocoaBeanExportBatchProcessing(models.Model):
 
     def _eudr_source_lots(self):
         return super()._eudr_source_lots() | self.sudo().processing_id.line_ids.lot_id
+
+
+class CocoaMbEntryExportBatch(models.Model):
+    _inherit = 'cocoa.mb.entry'
+
+    export_batch_id = fields.Many2one(
+        'cocoa.bean.export.batch', string="Lot d'usinage (export)",
+        readonly=True, index=True, ondelete='restrict')
 
 
 class CocoaExportProcessingBeanExport(models.Model):
