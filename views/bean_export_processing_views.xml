@@ -11,7 +11,7 @@
                 <button name="action_new_export_batch" type="object"
                         string="Lot d'usinage expédié au port" class="btn-primary"
                         invisible="state != 'processing'"
-                        groups="potting_management.group_potting_shipping,potting_management.group_potting_production,potting_management.group_potting_container_manager"/>
+                        groups="potting_management.group_potting_shipping,potting_management.group_potting_production_finished,potting_management.group_potting_container_manager"/>
             </xpath>
             <xpath expr="//page[@name='receptions']" position="before">
                 <page string="Lots d'usinage (export)" name="export_batches">

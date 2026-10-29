@@ -10,7 +10,7 @@
                 <button name="action_open_bean_constitution" type="object"
                         string="Constituer le lot" class="btn-primary"
                         invisible="not is_bean_lot or state not in ('draft', 'in_production', 'ready') or is_split"
-                        groups="potting_management.group_potting_shipping,potting_management.group_potting_container_manager,potting_management.group_potting_production"/>
+                        groups="potting_management.group_potting_shipping,potting_management.group_potting_container_manager,potting_management.group_potting_production_finished"/>
             </xpath>
             <!-- Fèves : la production se constitue depuis les lots d'usinage -->
             <xpath expr="//button[@name='action_start_production']" position="attributes">
