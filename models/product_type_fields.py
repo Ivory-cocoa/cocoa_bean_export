@@ -158,6 +158,17 @@ class ProductTemplate(models.Model):
         selection_add=BEANS, ondelete={PRODUCT_TYPE: 'set null'})
 
 
+class PottingCostForecastItem(models.Model):
+    """Grille du coût prévisionnel des OT : une rubrique peut viser les OT
+    de fèves (champ facultatif, vide = tous les produits)."""
+    _name = 'potting.cost.forecast.item'
+    _inherit = ['potting.cost.forecast.item', 'cocoa.bean.export.product.type.mixin']
+    _bean_product_type_fields = ('product_type',)
+
+    product_type = fields.Selection(
+        selection_add=BEANS, ondelete={PRODUCT_TYPE: 'set null'})
+
+
 # ----------------------------------------------------------------------------
 # Assistants (imports, rapports, génération) : valeur ajoutée et filtrée.
 # Enregistrements temporaires : supprimés avec la valeur à la désinstallation
@@ -244,3 +255,10 @@ class DusCalculationWizard(models.TransientModel):
     _bean_product_type_fields = ('product_subtype',)
 
     product_subtype = fields.Selection(selection_add=BEANS, ondelete=WIZARD_ONDELETE)
+
+
+class CostForecastAnalysis(models.TransientModel):
+    _name = 'potting.cost.forecast.analysis'
+    _inherit = ['potting.cost.forecast.analysis', 'cocoa.bean.export.product.type.mixin']
+
+    product_type = fields.Selection(selection_add=BEANS, ondelete={PRODUCT_TYPE: 'set null'})
