@@ -7,7 +7,7 @@ ceux du socle. Ce module n'ajoute que ce qui est propre aux fèves.
 
 ## Circuit
 
-1. **Lot d'usinage** (Production ▸ Lots d'usinage) : saisie du bulletin de
+1. **Lot d'usinage** (Production ▸ Ordres & lots ▸ Lots d'usinage) : saisie du bulletin de
    pesée de sortie du site — n° de lot du site, n° de bulletin, sacs, poids
    brut, tare (net = brut − tare), mesures qualité, certification. Confirmer.
 2. **OT de fèves** → générer les lots (découpage au tonnage maximal réglé).
@@ -38,7 +38,7 @@ Identité imprimée (nom commercial, sigle, NCC, REX, ID RA) : bloc
 
 Aucune limite n'est codée ici : les mesures du lot d'usinage sont évaluées
 avec les référentiels du module fèves, modifiables dans Configuration ▸
-Qualité des fèves :
+Fèves de cacao (export) :
 
 - **Normes d'acceptation** (une par certification, sinon fèves ordinaires) →
   conforme / non conforme ;
@@ -56,14 +56,14 @@ foi pour l'EUDR, l'usinage se clôture sans camion RUT et sa sortie est figée
 
 ## Mise en service
 
-Configuration ▸ Mise en service (fèves) : 14 contrôles de la configuration
+Configuration ▸ Fèves de cacao (export) ▸ Mise en service (fèves) : 14 contrôles de la configuration
 réelle (bloquant / à compléter / conforme), chacun avec un bouton vers
 l'écran de correction.
 
 ## Documents d'export (BL)
 
 Chaque BL de fèves reçoit une ligne par type de document actif
-(Configuration ▸ Documents d'export des fèves). Valeurs de départ, à ajuster :
+(Configuration ▸ Fèves de cacao (export) ▸ Documents d'export des fèves). Valeurs de départ, à ajuster :
 
 | Document | Exigence | Pièce jointe |
 |---|---|---|
@@ -99,7 +99,7 @@ avoir (assistant du socle, pré-rempli) ou par une pièce comptable externe.
 
 ## Import de l'historique
 
-Production ▸ Importer des lots d'usinage : classeur .xlsx dont les colonnes
+Production ▸ Ordres & lots ▸ Importer des lots d'usinage : classeur .xlsx dont les colonnes
 sont reconnues par leur en-tête (alias, ordre libre ; obligatoires : n° de
 lot du site, site, date, poids brut). « Analyser » contrôle sans rien créer
 (site, certification, poids, doublons dans le fichier et en base) ;

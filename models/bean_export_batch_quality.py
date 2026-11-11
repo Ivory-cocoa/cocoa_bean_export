@@ -8,7 +8,7 @@ Aucune limite n'est écrite ici. Les mesures du lot sont confrontées :
   * à la GRILLE DES GRADES de la campagne fèves (cocoa.quality.criterion :
     seuils Grade 1 / Grade 2 par critère) → Grade 1, Grade 2, sous-grade.
 
-Les deux référentiels se modifient dans Configuration ▸ Qualité des fèves.
+Les deux référentiels se modifient dans Configuration ▸ Fèves de cacao (export).
 La sévérité du contrôle à la constitution d'un lot export est un réglage
 (désactivé / avertissement / blocage) : tant que les normes de la société
 ne sont pas arrêtées, l'avertissement informe sans bloquer.
@@ -60,7 +60,7 @@ class CocoaBeanExportBatchQuality(models.Model):
         'cocoa.quality.standard', string="Norme appliquée",
         compute='_compute_quality', store=True,
         help="Norme d'acceptation de la certification du lot, sinon celle "
-             "des fèves ordinaires (Configuration ▸ Qualité des fèves).")
+             "des fèves ordinaires (Configuration ▸ Fèves de cacao (export)).")
     quality_grade = fields.Selection(
         CCC_GRADES, string="Grade (grille)", compute='_compute_quality', store=True,
         help="Grade déduit des mesures et de la grille de la campagne fèves.")

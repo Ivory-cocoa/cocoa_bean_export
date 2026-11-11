@@ -3,7 +3,7 @@
 fumigation, d'origine, de qualité, de poids…).
 
 La liste des documents et leur exigence sont des données de configuration
-(Configuration ▸ Documents d'export des fèves) : rien n'est imposé par le
+(Configuration ▸ Fèves de cacao (export) ▸ Documents d'export des fèves) : rien n'est imposé par le
 code. Chaque type dit à quel moment il est exigé — confirmation du BL ou
 confirmation de la facture —, s'il faut joindre la pièce, et combien de
 jours il reste valable (fumigation, phytosanitaire) par rapport à la date
@@ -236,7 +236,7 @@ class PottingDeliveryNoteBeanDocuments(models.Model):
                 "📄 Documents d'export incomplets — impossible de %(action)s.\n\n"
                 "%(issues)s\n\nRenseignez-les dans l'onglet « Documents d'export » "
                 "du BL (la liste et les exigences se règlent dans Configuration ▸ "
-                "Documents d'export des fèves).",
+                "Fèves de cacao (export) ▸ Documents d'export des fèves).",
                 action=action_label, issues="\n\n".join(blocking)))
 
 
