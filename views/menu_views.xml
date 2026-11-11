@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Lots d'usinage : en tête du menu Production du socle -->
+    <!-- Lots d'usinage : en tête de Production ▸ Ordres &amp; lots du socle -->
     <menuitem id="menu_cocoa_bean_export_batch"
               name="Lots d'usinage"
-              parent="potting_management.menu_potting_production"
+              parent="potting_management.menu_potting_production_orders_section"
               action="action_cocoa_bean_export_batch"
               sequence="5"
               groups="potting_management.group_potting_shipping,potting_management.group_potting_production,potting_management.group_potting_container_manager"/>
 
     <menuitem id="menu_cocoa_bean_export_batch_import"
               name="Importer des lots d'usinage"
-              parent="potting_management.menu_potting_production"
+              parent="potting_management.menu_potting_production_orders_section"
               action="action_cocoa_bean_export_batch_import"
               sequence="6"
               groups="potting_management.group_potting_shipping,potting_management.group_potting_manager"/>
@@ -29,19 +29,19 @@
               sequence="5"
               groups="potting_management.group_potting_commercial,potting_management.group_potting_shipping,potting_management.group_potting_accountant,potting_management.group_potting_production,potting_management.group_potting_container_manager,potting_management.group_potting_bl_manager,potting_management.group_potting_payment_manager,potting_management.group_potting_pdg,potting_management.group_potting_cv_manager"/>
 
+    <!-- Paramétrage propre aux fèves, en une section de la Configuration :
+         mise en service, référentiels qualité (normes, grilles de grades),
+         documents d'export ; modifiable par le Manager Export -->
+    <menuitem id="menu_bean_export_quality_config"
+              name="Fèves de cacao (export)"
+              parent="potting_management.menu_potting_config"
+              sequence="40"
+              groups="potting_management.group_potting_manager"/>
     <menuitem id="menu_bean_export_readiness"
               name="Mise en service (fèves)"
-              parent="potting_management.menu_potting_config"
+              parent="menu_bean_export_quality_config"
               action="action_cocoa_bean_export_readiness"
-              sequence="1"
-              groups="potting_management.group_potting_manager"/>
-
-    <!-- Référentiels qualité du module fèves (normes, grilles de grades),
-         modifiables par le Manager Export -->
-    <menuitem id="menu_bean_export_quality_config"
-              name="Qualité des fèves"
-              parent="potting_management.menu_potting_config"
-              sequence="45"
+              sequence="5"
               groups="potting_management.group_potting_manager"/>
     <menuitem id="menu_bean_export_quality_standard"
               name="Normes d'acceptation"
@@ -58,8 +58,8 @@
 
     <menuitem id="menu_bean_export_document_type"
               name="Documents d'export des fèves"
-              parent="potting_management.menu_potting_config"
+              parent="menu_bean_export_quality_config"
               action="action_cocoa_bean_export_document_type"
-              sequence="46"
+              sequence="30"
               groups="potting_management.group_potting_manager"/>
 </odoo>

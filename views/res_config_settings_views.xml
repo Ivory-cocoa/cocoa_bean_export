@@ -31,7 +31,7 @@
                         </div>
                     </setting>
                     <setting id="bean_export_quality" string="Contrôle qualité"
-                             help="Les mesures d'un lot d'usinage sont évaluées avec la norme d'acceptation de sa certification et la grille des grades de la campagne fèves (Configuration ▸ Qualité des fèves).">
+                             help="Les mesures d'un lot d'usinage sont évaluées avec la norme d'acceptation de sa certification et la grille des grades de la campagne fèves (Configuration ▸ Fèves de cacao (export)).">
                         <field name="bean_export_quality_control" widget="radio"/>
                     </setting>
                     <setting id="bean_export_claims" string="Réclamations à l'arrivée"

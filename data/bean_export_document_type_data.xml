@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Documents usuels d'une expédition de fèves. Exigences et validités
-         sont des valeurs de départ, à ajuster dans Configuration ▸ Documents
+         sont des valeurs de départ, à ajuster dans Configuration ▸ Fèves de cacao (export) ▸ Documents
          d'export des fèves (noupdate : vos réglages ne sont jamais écrasés). -->
     <data noupdate="1">
         <record id="doc_type_phyto" model="cocoa.bean.export.document.type">
